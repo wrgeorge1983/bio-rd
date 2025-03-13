@@ -105,6 +105,7 @@ const (
 	// Sub-Address Familiy Identifiers
 	SAFIUnicast        = 1
 	SAFILabeledUnicast = 4
+	SAFIMPLSVPN 	   = 128
 
 	// Capabilities
 	CapabilitiesParamType       = 2

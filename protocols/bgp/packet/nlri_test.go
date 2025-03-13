@@ -227,6 +227,60 @@ func TestDecodeNLRI(t *testing.T) {
 			input:    []byte{},
 			wantFail: true,
 		},
+		{
+			name: "VPNv4 NLRI",
+			safi: SAFIMPLSVPN,
+			input: []byte{
+				112,               // prefix + label stack + RD length
+				0x49, 0x33, 0x01, // MPLS label with bottom bit set
+				0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, // Route Distinguisher (8 bytes)
+				192, 168, 1,      // Prefix: 192.168.1.0/24
+			},
+			wantFail: false,
+			expected: &NLRI{
+				LabelStack: []LabelStackEntry{
+					0x00493301,
+				},
+				RouteDistinguisher: func() *RouteDistinguisher {
+					rd := RouteDistinguisher(0x0001000000010001)
+					return &rd
+				}(),
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 1, 0), 24).Dedup(),
+			},
+		},
+		{
+			name: "VPNv4 NLRI with multiple labels",
+			safi: SAFIMPLSVPN,
+			input: []byte{
+				130,              // prefix + label stack + RD length
+				0x49, 0x33, 0x00, // MPLS label 1
+				0x49, 0x34, 0x01, // MPLS label 2 with bottom bit set
+				0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x04, // Route Distinguisher (8 bytes)
+				10, 0, 0,         // Prefix: 10.0.0.0/18
+			},
+			wantFail: false,
+			expected: &NLRI{
+				LabelStack: []LabelStackEntry{
+					0x00493300,
+					0x00493401,
+				},
+				RouteDistinguisher: func() *RouteDistinguisher {
+					rd := RouteDistinguisher(0x0002000000030004)
+					return &rd
+				}(),
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 18).Dedup(),
+			},
+		},
+		{
+			name: "Incomplete VPNv4 NLRI (missing RD bytes)",
+			safi: SAFIMPLSVPN,
+			input: []byte{
+				80,               // prefix + label stack + RD length
+				0x49, 0x33, 0x01, // MPLS label with bottom bit set
+				0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // Incomplete RD (only 6 bytes)
+			},
+			wantFail: true,
+		},
 	}
 
 	for _, test := range tests {
@@ -365,11 +419,59 @@ func TestNLRISerialize(t *testing.T) {
 				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(100, 200, 128, 0), 17).Dedup(),
 				LabelStack: []LabelStackEntry{
 					NewLabelStackEntry(299824),
-					NewLabelStackEntry(299825),
+					NewLabelStackEntry(299841),
 				},
 			},
 			safi:     SAFILabeledUnicast,
-			expected: []byte{17 + 24 + 24, 0x49, 0x33, 0x00, 0x49, 0x33, 0x11, 100, 200, 128},
+			expected: []byte{17 + 24 + 24, 0x49, 0x33, 0x00, 0x49, 0x34, 0x11, 100, 200, 128},
+		},
+		{
+			name: "VPNv4 NLRI",
+			nlri: &NLRI{
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 1, 0), 24).Dedup(),
+				LabelStack: []LabelStackEntry{
+					NewLabelStackEntry(299824),
+				},
+				RouteDistinguisher: func() *RouteDistinguisher {
+					rd := RouteDistinguisher(0x0001000000010001)
+					return &rd
+				}(),
+			},
+			safi:     SAFIMPLSVPN,
+			expected: []byte{112, 0x49, 0x33, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 192, 168, 1},
+		},
+		{
+			name: "VPNv4 NLRI with multiple labels",
+			nlri: &NLRI{
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 24).Dedup(),
+				LabelStack: []LabelStackEntry{
+					NewLabelStackEntry(299824),
+					NewLabelStackEntry(299841),
+				},
+				RouteDistinguisher: func() *RouteDistinguisher {
+					rd := RouteDistinguisher(0x0002000000030004)
+					return &rd
+				}(),
+			},
+			safi:     SAFIMPLSVPN,
+			expected: []byte{136, 0x49, 0x33, 0x00, 0x49, 0x34, 0x11, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x04, 10, 0, 0},
+		},
+		{
+			name: "VPNv4 NLRI with add-path",
+			nlri: &NLRI{
+				PathIdentifier: 42,
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 1, 0), 24).Dedup(),
+				LabelStack: []LabelStackEntry{
+					NewLabelStackEntry(299824),
+				},
+				RouteDistinguisher: func() *RouteDistinguisher {
+					rd := RouteDistinguisher(0x0001000000010001)
+					return &rd
+				}(),
+			},
+			addPath:  true,
+			safi:     SAFIMPLSVPN,
+			expected: []byte{0, 0, 0, 42, 112, 0x49, 0x33, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 192, 168, 1},
 		},
 	}
 
