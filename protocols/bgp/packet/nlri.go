@@ -8,18 +8,15 @@ import (
 
 	bnet "github.com/bio-routing/bio-rd/net"
 	"github.com/bio-routing/bio-rd/util/decode"
-	"github.com/bio-routing/tflow2/convert"	
-	// "github.com/bio-routing/bio-rd/routingtable/vrf"
-
-
+	"github.com/bio-routing/tflow2/convert"
 )
 
 const (
-	PathIdentifierLen = 4
-	BytesPerLabel     = 3
-	BitsPerLabel      = BytesPerLabel * 8
+	PathIdentifierLen          = 4
+	BytesPerLabel              = 3
+	BitsPerLabel               = BytesPerLabel * 8
 	BytesPerRouteDistinguisher = 8
-	BitsPerRouteDistinguisher = BytesPerRouteDistinguisher * 8
+	BitsPerRouteDistinguisher  = BytesPerRouteDistinguisher * 8
 )
 
 type RouteDistinguisher uint64
@@ -39,18 +36,18 @@ func (rd *RouteDistinguisher) serialize(buf *bytes.Buffer) {
 
 // NLRI represents a Network Layer Reachability Information
 type NLRI struct {
-	PathIdentifier uint32
+	PathIdentifier     uint32
 	RouteDistinguisher *RouteDistinguisher // for VPNv4 and VPNv6 routes
-	LabelStack     []LabelStackEntry
-	Prefix         *bnet.Prefix
-	Next           *NLRI
+	LabelStack         []LabelStackEntry
+	Prefix             *bnet.Prefix
+	Next               *NLRI
 }
 
 func decodeRouteDistinguisher(buf *bytes.Buffer) (*RouteDistinguisher, error) {
 	var rd RouteDistinguisher
 	err := decode.Decode(buf, []interface{}{&rd})
 	if err != nil {
-		return nil, fmt.Errorf("unable to decode route destinguisher: %w", err)
+		return nil, fmt.Errorf("unable to decode route distinguisher: %w", err)
 	}
 	return &rd, nil
 }
@@ -123,7 +120,7 @@ func decodeNLRI(buf *bytes.Buffer, afi uint16, safi uint8, addPath bool) (*NLRI,
 		}
 	}
 
-	if safi == SAFIMPLSVPN { 
+	if safi == SAFIMPLSVPN {
 		rdValue, err := decodeRouteDistinguisher(buf)
 		if err != nil {
 			return nil, consumed, fmt.Errorf("decode route distinguisher failed: %w", err)
@@ -166,7 +163,7 @@ func (n *NLRI) serialize(buf *bytes.Buffer, addPath bool, safi uint8) uint8 {
 	pfxLen := n.Prefix.Len()
 	if safi == SAFILabeledUnicast || safi == SAFIMPLSVPN {
 		pfxLen += uint8(len(n.LabelStack) * BitsPerLabel)
-	} 
+	}
 	if safi == SAFIMPLSVPN {
 		pfxLen += BitsPerRouteDistinguisher
 	}
