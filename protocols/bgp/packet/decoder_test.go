@@ -3,6 +3,8 @@ package packet
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/util"
 	"strconv"
 	"testing"
 
@@ -72,7 +74,7 @@ func BenchmarkDecodeUpdateMsg(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		buf := bytes.NewBuffer(input)
-		_, err := decodeUpdateMsg(buf, uint16(len(input)), &DecodeOptions{})
+		_, err := decodeUpdateMsg(buf, uint16(len(input)), &util.DecodeOptions{})
 		if err != nil {
 			fmt.Printf("decodeUpdateMsg failed: %v\n", err)
 		}
@@ -208,9 +210,9 @@ func TestDecode(t *testing.T) {
 				},
 				Body: &BGPUpdate{
 					WithdrawnRoutesLen: 5,
-					WithdrawnRoutes: &NLRI{
+					WithdrawnRoutes: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-						Next: &NLRI{
+						Next: &mplri.NLRI{
 							Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 						},
 					},
@@ -251,7 +253,7 @@ func TestDecode(t *testing.T) {
 
 	for _, test := range tests {
 		buf := bytes.NewBuffer(test.input)
-		msg, err := Decode(buf, &DecodeOptions{})
+		msg, err := Decode(buf, &util.DecodeOptions{})
 
 		if err != nil && !test.wantFail {
 			t.Errorf("Unexpected error in test %d: %v", test.testNum, err)
@@ -426,9 +428,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -463,9 +465,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -575,9 +577,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -664,9 +666,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -766,9 +768,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -880,9 +882,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -1010,9 +1012,9 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			wantFail: false,
 			expected: &BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -1097,7 +1099,7 @@ func TestDecodeUpdateMsg(t *testing.T) {
 						},
 					},
 				},
-				NLRI: &NLRI{
+				NLRI: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(11, 0, 0, 0), 8).Ptr(),
 				},
 			},
@@ -1207,7 +1209,7 @@ func TestDecodeUpdateMsg(t *testing.T) {
 			if l == 0 {
 				l = uint16(len(test.input))
 			}
-			msg, err := decodeUpdateMsg(buf, l, &DecodeOptions{})
+			msg, err := decodeUpdateMsg(buf, l, &util.DecodeOptions{})
 
 			if err != nil && !test.wantFail {
 				t.Fatalf("Unexpected error in test %d: %v", test.testNum, err)
@@ -1243,7 +1245,7 @@ func TestDecodeMsgBody(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		res, err := decodeMsgBody(test.buffer, test.msgType, test.length, &DecodeOptions{})
+		res, err := decodeMsgBody(test.buffer, test.msgType, test.length, &util.DecodeOptions{})
 		if test.wantFail && err == nil {
 			t.Errorf("Expected error dit not happen in test %q", test.name)
 		}
@@ -1641,8 +1643,8 @@ func TestDecodeCapability(t *testing.T) {
 				Code:   MultiProtocolCapabilityCode,
 				Length: 4,
 				Value: MultiProtocolCapability{
-					AFI:  AFIIPv6,
-					SAFI: SAFIUnicast,
+					AFI:  util.AFIIPv6,
+					SAFI: util.SAFIUnicast,
 				},
 			},
 			wantFail: false,

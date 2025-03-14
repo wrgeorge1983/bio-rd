@@ -1,4 +1,4 @@
-package packet
+package mplri
 
 import (
 	"bytes"

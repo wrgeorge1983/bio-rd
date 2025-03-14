@@ -3,6 +3,8 @@ package packet
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/util"
 	"net"
 
 	"github.com/bio-routing/bio-rd/util/decode"
@@ -14,7 +16,7 @@ const (
 )
 
 // Decode decodes a BGP message
-func Decode(buf *bytes.Buffer, opt *DecodeOptions) (*BGPMessage, error) {
+func Decode(buf *bytes.Buffer, opt *util.DecodeOptions) (*BGPMessage, error) {
 	hdr, err := decodeHeader(buf)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode header: %w", err)
@@ -31,7 +33,7 @@ func Decode(buf *bytes.Buffer, opt *DecodeOptions) (*BGPMessage, error) {
 	}, nil
 }
 
-func decodeMsgBody(buf *bytes.Buffer, msgType uint8, l uint16, opt *DecodeOptions) (interface{}, error) {
+func decodeMsgBody(buf *bytes.Buffer, msgType uint8, l uint16, opt *util.DecodeOptions) (interface{}, error) {
 	switch msgType {
 	case OpenMsg:
 		return DecodeOpenMsg(buf)
@@ -45,7 +47,7 @@ func decodeMsgBody(buf *bytes.Buffer, msgType uint8, l uint16, opt *DecodeOption
 	return nil, fmt.Errorf("unknown message type: %d", msgType)
 }
 
-func decodeUpdateMsg(buf *bytes.Buffer, l uint16, opt *DecodeOptions) (*BGPUpdate, error) {
+func decodeUpdateMsg(buf *bytes.Buffer, l uint16, opt *util.DecodeOptions) (*BGPUpdate, error) {
 	msg := &BGPUpdate{}
 
 	err := decode.DecodeUint16(buf, &msg.WithdrawnRoutesLen)
@@ -53,7 +55,7 @@ func decodeUpdateMsg(buf *bytes.Buffer, l uint16, opt *DecodeOptions) (*BGPUpdat
 		return msg, err
 	}
 
-	msg.WithdrawnRoutes, err = decodeNLRIs(buf, uint16(msg.WithdrawnRoutesLen), AFIIPv4, SAFIUnicast, opt.AddPathIPv4Unicast)
+	msg.WithdrawnRoutes, err = mplri.DecodeNLRIs(buf, uint16(msg.WithdrawnRoutesLen), util.AFIIPv4, util.SAFIUnicast, opt.AddPathIPv4Unicast)
 	if err != nil {
 		return msg, err
 	}
@@ -70,7 +72,7 @@ func decodeUpdateMsg(buf *bytes.Buffer, l uint16, opt *DecodeOptions) (*BGPUpdat
 
 	nlriLen := uint16(l) - 4 - uint16(msg.TotalPathAttrLen) - uint16(msg.WithdrawnRoutesLen)
 	if nlriLen > 0 {
-		msg.NLRI, err = decodeNLRIs(buf, nlriLen, AFIIPv4, SAFIUnicast, opt.AddPathIPv4Unicast)
+		msg.NLRI, err = mplri.DecodeNLRIs(buf, nlriLen, util.AFIIPv4, util.SAFIUnicast, opt.AddPathIPv4Unicast)
 		if err != nil {
 			return msg, err
 		}

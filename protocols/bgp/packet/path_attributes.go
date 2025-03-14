@@ -3,6 +3,8 @@ package packet
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/util"
 	"math"
 
 	bnet "github.com/bio-routing/bio-rd/net"
@@ -12,7 +14,7 @@ import (
 	"github.com/bio-routing/tflow2/convert"
 )
 
-func decodePathAttrs(buf *bytes.Buffer, tpal uint16, opt *DecodeOptions) (*PathAttribute, error) {
+func decodePathAttrs(buf *bytes.Buffer, tpal uint16, opt *util.DecodeOptions) (*PathAttribute, error) {
 	if tpal == 0 {
 		return nil, nil
 	}
@@ -72,7 +74,7 @@ func decodePathAttrs(buf *bytes.Buffer, tpal uint16, opt *DecodeOptions) (*PathA
 	return ret, nil
 }
 
-func decodePathAttr(buf *bytes.Buffer, opt *DecodeOptions) (pa *PathAttribute, consumed uint16, err error) {
+func decodePathAttr(buf *bytes.Buffer, opt *util.DecodeOptions) (pa *PathAttribute, consumed uint16, err error) {
 	pa = &PathAttribute{}
 
 	err = decodePathAttrFlags(buf, pa)
@@ -167,7 +169,7 @@ func decodePathAttr(buf *bytes.Buffer, opt *DecodeOptions) (pa *PathAttribute, c
 	return pa, consumed + pa.Length, nil
 }
 
-func (pa *PathAttribute) decodeMultiProtocolReachNLRI(buf *bytes.Buffer, opt *DecodeOptions) error {
+func (pa *PathAttribute) decodeMultiProtocolReachNLRI(buf *bytes.Buffer, opt *util.DecodeOptions) error {
 	b := make([]byte, pa.Length)
 	n, err := buf.Read(b)
 	if err != nil {
@@ -177,7 +179,7 @@ func (pa *PathAttribute) decodeMultiProtocolReachNLRI(buf *bytes.Buffer, opt *De
 		return fmt.Errorf("unable to read %d bytes from buffer, only got %d bytes", pa.Length, n)
 	}
 
-	nlri, err := deserializeMultiProtocolReachNLRI(b, opt)
+	nlri, err := mplri.DeserializeMultiProtocolReachNLRI(b, opt)
 	if err != nil {
 		return fmt.Errorf("unable to decode MP_REACH_NLRI: %w", err)
 	}
@@ -186,7 +188,7 @@ func (pa *PathAttribute) decodeMultiProtocolReachNLRI(buf *bytes.Buffer, opt *De
 	return nil
 }
 
-func (pa *PathAttribute) decodeMultiProtocolUnreachNLRI(buf *bytes.Buffer, opt *DecodeOptions) error {
+func (pa *PathAttribute) decodeMultiProtocolUnreachNLRI(buf *bytes.Buffer, opt *util.DecodeOptions) error {
 	b := make([]byte, pa.Length)
 	n, err := buf.Read(b)
 	if err != nil {
@@ -196,7 +198,7 @@ func (pa *PathAttribute) decodeMultiProtocolUnreachNLRI(buf *bytes.Buffer, opt *
 		return fmt.Errorf("unable to read %d bytes from buffer, only got %d bytes", pa.Length, n)
 	}
 
-	nlri, err := deserializeMultiProtocolUnreachNLRI(b, opt)
+	nlri, err := mplri.DeserializeMultiProtocolUnreachNLRI(b, opt)
 	if err != nil {
 		return fmt.Errorf("unable to decode MP_UNREACH_NLRI: %w", err)
 	}
@@ -506,7 +508,7 @@ func dumpNBytes(buf *bytes.Buffer, n uint16) error {
 }
 
 // Serialize serializes a path attribute
-func (pa *PathAttribute) Serialize(buf *bytes.Buffer, opt *EncodeOptions) uint16 {
+func (pa *PathAttribute) Serialize(buf *bytes.Buffer, opt *types.EncodeOptions) uint16 {
 	pathAttrLen := uint16(0)
 
 	switch pa.TypeCode {
@@ -554,7 +556,7 @@ func (pa *PathAttribute) serializeOrigin(buf *bytes.Buffer) uint8 {
 	return length + 3
 }
 
-func (pa *PathAttribute) serializeASPath(buf *bytes.Buffer, opt *EncodeOptions) uint16 {
+func (pa *PathAttribute) serializeASPath(buf *bytes.Buffer, opt *types.EncodeOptions) uint16 {
 	attrFlags := uint8(0)
 	attrFlags = setTransitive(attrFlags)
 
@@ -793,22 +795,22 @@ func (pa *PathAttribute) serializeUnknownAttribute(buf *bytes.Buffer) uint16 {
 	return uint16(len(b)) + 3
 }
 
-func (pa *PathAttribute) serializeMultiProtocolReachNLRI(buf *bytes.Buffer, opt *EncodeOptions) uint16 {
-	v := pa.Value.(MultiProtocolReachNLRI)
+func (pa *PathAttribute) serializeMultiProtocolReachNLRI(buf *bytes.Buffer, opt *types.EncodeOptions) uint16 {
+	v := pa.Value.(mplri.MultiProtocolReachNLRI)
 	pa.Optional = true
 
 	tempBuf := bytes.NewBuffer(nil)
-	v.serialize(tempBuf, opt)
+	v.Serialize(tempBuf, opt)
 
 	return pa.serializeGeneric(tempBuf.Bytes(), buf)
 }
 
-func (pa *PathAttribute) serializeMultiProtocolUnreachNLRI(buf *bytes.Buffer, opt *EncodeOptions) uint16 {
-	v := pa.Value.(MultiProtocolUnreachNLRI)
+func (pa *PathAttribute) serializeMultiProtocolUnreachNLRI(buf *bytes.Buffer, opt *types.EncodeOptions) uint16 {
+	v := pa.Value.(mplri.MultiProtocolUnreachNLRI)
 	pa.Optional = true
 
 	tempBuf := bytes.NewBuffer(nil)
-	v.serialize(tempBuf, opt)
+	v.Serialize(tempBuf, opt)
 
 	return pa.serializeGeneric(tempBuf.Bytes(), buf)
 }

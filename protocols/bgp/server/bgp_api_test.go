@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
+	"github.com/bio-routing/bio-rd/util"
 	"io"
 	"net"
 	"testing"
 	"time"
 
 	"github.com/bio-routing/bio-rd/protocols/bgp/api"
-	"github.com/bio-routing/bio-rd/protocols/bgp/packet"
 	"github.com/bio-routing/bio-rd/protocols/bgp/types"
 	"github.com/bio-routing/bio-rd/route"
 	routeapi "github.com/bio-routing/bio-rd/route/api"
@@ -57,8 +57,8 @@ func TestDumpRIBInOut(t *testing.T) {
 			addRoutes: []*route.Route{},
 			req: &api.DumpRIBRequest{
 				Peer: bnet.IPv4FromOctets(10, 0, 0, 0).ToProto(),
-				Afi:  packet.AFIIPv4,
-				Safi: packet.SAFIUnicast,
+				Afi:  util.AFIIPv4,
+				Safi: util.SAFIUnicast,
 			},
 			expected: []*routeapi.Route{},
 			wantFail: true,
@@ -90,8 +90,8 @@ func TestDumpRIBInOut(t *testing.T) {
 			addRoutes: []*route.Route{},
 			req: &api.DumpRIBRequest{
 				Peer: bnet.IPv4FromOctets(10, 0, 0, 0).ToProto(),
-				Afi:  packet.AFIIPv4,
-				Safi: packet.SAFIUnicast,
+				Afi:  util.AFIIPv4,
+				Safi: util.SAFIUnicast,
 			},
 			expected: []*routeapi.Route{},
 			wantFail: false,
@@ -135,8 +135,8 @@ func TestDumpRIBInOut(t *testing.T) {
 			},
 			req: &api.DumpRIBRequest{
 				Peer:    bnet.IPv4FromOctets(10, 0, 0, 0).ToProto(),
-				Afi:     packet.AFIIPv4,
-				Safi:    packet.SAFIUnicast,
+				Afi:     util.AFIIPv4,
+				Safi:    util.SAFIUnicast,
 				VrfName: vrf.DefaultVRFName,
 			},
 			expected: []*routeapi.Route{
@@ -226,8 +226,8 @@ func TestDumpRIBInOut(t *testing.T) {
 			},
 			req: &api.DumpRIBRequest{
 				Peer: bnet.IPv4FromOctets(10, 0, 0, 0).ToProto(),
-				Afi:  packet.AFIIPv4,
-				Safi: packet.SAFIUnicast,
+				Afi:  util.AFIIPv4,
+				Safi: util.SAFIUnicast,
 			},
 			expected: []*routeapi.Route{
 				{

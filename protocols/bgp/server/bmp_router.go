@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/util"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -81,7 +82,7 @@ type neighbor struct {
 	peerAS      uint32
 	routerID    uint32
 	fsm         *FSM
-	opt         *packet.DecodeOptions
+	opt         *util.DecodeOptions
 }
 
 func newRouter(addr net.IP, port uint16, arif adjRIBInFactoryI, config RouterConfig) *Router {
@@ -423,7 +424,7 @@ func (r *Router) processPeerUpNotification(msg *bmppkt.PeerUpNotification) error
 	if !found {
 		return fmt.Errorf("unable to get inet RIB")
 	}
-	fsm.ipv4Unicast = newFSMAddressFamily(packet.AFIIPv4, packet.SAFIUnicast, &peerAddressFamily{
+	fsm.ipv4Unicast = newFSMAddressFamily(util.AFIIPv4, util.SAFIUnicast, &peerAddressFamily{
 		rib:               rib4,
 		importFilterChain: filter.NewAcceptAllFilterChain(),
 	}, fsm)
@@ -434,7 +435,7 @@ func (r *Router) processPeerUpNotification(msg *bmppkt.PeerUpNotification) error
 		return fmt.Errorf("unable to get inet6 RIB")
 	}
 
-	fsm.ipv6Unicast = newFSMAddressFamily(packet.AFIIPv6, packet.SAFIUnicast, &peerAddressFamily{
+	fsm.ipv6Unicast = newFSMAddressFamily(util.AFIIPv6, util.SAFIUnicast, &peerAddressFamily{
 		rib:               rib6,
 		importFilterChain: filter.NewAcceptAllFilterChain(),
 	}, fsm)
@@ -469,10 +470,10 @@ func (r *Router) processPeerUpNotification(msg *bmppkt.PeerUpNotification) error
 
 func (n *neighbor) registerClients(clients map[afiClient]struct{}) {
 	for ac := range clients {
-		if ac.afi == packet.AFIIPv4 {
+		if ac.afi == util.AFIIPv4 {
 			n.fsm.ipv4Unicast.adjRIBIn.Register(ac.client)
 		}
-		if ac.afi == packet.AFIIPv6 {
+		if ac.afi == util.AFIIPv6 {
 			n.fsm.ipv6Unicast.adjRIBIn.Register(ac.client)
 		}
 	}

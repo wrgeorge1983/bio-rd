@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"errors"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
 	"io"
 	"testing"
 
@@ -13,7 +15,7 @@ import (
 
 type failingUpdate struct{}
 
-func (f *failingUpdate) SerializeUpdate(opt *packet.EncodeOptions) ([]byte, error) {
+func (f *failingUpdate) SerializeUpdate(opt *types.EncodeOptions) ([]byte, error) {
 	return nil, errors.New("general error")
 }
 
@@ -47,9 +49,9 @@ func TestSerializeAndSendUpdate(t *testing.T) {
 			err:  nil,
 			testUpdate: &packet.BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &packet.NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &packet.NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -75,9 +77,9 @@ func TestSerializeAndSendUpdate(t *testing.T) {
 			err:  errors.New("failed sending Update: general error"),
 			testUpdate: &packet.BGPUpdate{
 				WithdrawnRoutesLen: 5,
-				WithdrawnRoutes: &packet.NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &packet.NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -87,7 +89,7 @@ func TestSerializeAndSendUpdate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			opt := &packet.EncodeOptions{}
+			opt := &types.EncodeOptions{}
 			err := serializeAndSendUpdate(test.buf, test.testUpdate, opt)
 
 			if test.err == nil {

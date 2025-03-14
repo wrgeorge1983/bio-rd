@@ -3,6 +3,7 @@ package route
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
 	"strings"
 
 	"github.com/bio-routing/tflow2/convert"
@@ -23,6 +24,11 @@ type BGPPath struct {
 	PathIdentifier    uint32
 	ASPathLen         uint16
 	BMPPostPolicy     bool // BMPPostPolicy fields is a hack used in BMP to differentiate between pre/post policy routes (L flag of the per peer header)
+
+	// MPBGP fields
+	MPReachNLRI *mplri.MultiProtocolReachNLRI
+	AFI         uint16
+	SAFI        uint8
 }
 
 // BGPPathA represents cachable BGP path attributes

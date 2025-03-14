@@ -1,8 +1,10 @@
-package packet
+package mplri
 
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
+	"github.com/bio-routing/bio-rd/util"
 
 	"github.com/bio-routing/bio-rd/util/decode"
 	"github.com/bio-routing/tflow2/convert"
@@ -15,13 +17,13 @@ type MultiProtocolUnreachNLRI struct {
 	NLRI *NLRI
 }
 
-func (n *MultiProtocolUnreachNLRI) serialize(buf *bytes.Buffer, opt *EncodeOptions) uint16 {
+func (n *MultiProtocolUnreachNLRI) Serialize(buf *bytes.Buffer, opt *types.EncodeOptions) uint16 {
 	tempBuf := bytes.NewBuffer(nil)
 	tempBuf.Write(convert.Uint16Byte(n.AFI))
 	tempBuf.WriteByte(n.SAFI)
 
 	for cur := n.NLRI; cur != nil; cur = cur.Next {
-		cur.serialize(tempBuf, opt.UseAddPath, n.SAFI)
+		cur.Serialize(tempBuf, opt.UseAddPath, n.SAFI)
 	}
 
 	buf.Write(tempBuf.Bytes())
@@ -29,7 +31,7 @@ func (n *MultiProtocolUnreachNLRI) serialize(buf *bytes.Buffer, opt *EncodeOptio
 	return uint16(tempBuf.Len())
 }
 
-func deserializeMultiProtocolUnreachNLRI(b []byte, opt *DecodeOptions) (MultiProtocolUnreachNLRI, error) {
+func DeserializeMultiProtocolUnreachNLRI(b []byte, opt *util.DecodeOptions) (MultiProtocolUnreachNLRI, error) {
 	n := MultiProtocolUnreachNLRI{}
 
 	prefixesLength := len(b) - 3 // 3 <- AFI + SAFI
@@ -53,7 +55,7 @@ func deserializeMultiProtocolUnreachNLRI(b []byte, opt *DecodeOptions) (MultiPro
 	}
 
 	buf := bytes.NewBuffer(nlris)
-	nlri, err := decodeNLRIs(buf, uint16(buf.Len()), n.AFI, n.SAFI, opt.addPath(n.AFI, n.SAFI))
+	nlri, err := DecodeNLRIs(buf, uint16(buf.Len()), n.AFI, n.SAFI, opt.AddPath(n.AFI, n.SAFI))
 	if err != nil {
 		return MultiProtocolUnreachNLRI{}, err
 	}

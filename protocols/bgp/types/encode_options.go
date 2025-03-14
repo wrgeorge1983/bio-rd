@@ -1,4 +1,4 @@
-package packet
+package types
 
 type EncodeOptions struct {
 	Use32BitASN bool

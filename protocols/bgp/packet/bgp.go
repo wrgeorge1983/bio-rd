@@ -98,15 +98,6 @@ const (
 	ConnectionCollisionResolution = 7
 	OutOfResources                = 8
 
-	// Address Familiy Identifiers
-	AFIIPv4 = 1
-	AFIIPv6 = 2
-
-	// Sub-Address Familiy Identifiers
-	SAFIUnicast        = 1
-	SAFILabeledUnicast = 4
-	SAFIMPLSVPN 	   = 128
-
 	// Capabilities
 	CapabilitiesParamType       = 2
 	MultiProtocolCapabilityCode = 1
@@ -127,13 +118,6 @@ const (
 	PeerRoleRolePeer     = 4
 
 	ASTransASN = 23456
-)
-
-var (
-	afiAddrLenBytes = map[uint16]uint8{
-		1: 4,
-		2: 16,
-	}
 )
 
 type BGPError struct {
@@ -179,18 +163,6 @@ type PathAttribute struct {
 	TypeCode       uint8
 	Value          interface{}
 	Next           *PathAttribute
-}
-
-// AFIName returns the name of an address family
-func AFIName(afi uint16) string {
-	switch afi {
-	case AFIIPv4:
-		return "IPv4"
-	case AFIIPv6:
-		return "IPv6"
-	default:
-		return "Unknown AFI"
-	}
 }
 
 func PeerRoleName(pr uint8) string {

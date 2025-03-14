@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/util"
 	"time"
 
 	"github.com/bio-routing/bio-rd/protocols/bgp/packet"
@@ -89,7 +90,7 @@ func (s *openConfirmState) keepaliveTimerExpired() (state, string) {
 	return newOpenConfirmState(s.fsm), s.fsm.reason
 }
 
-func (s *openConfirmState) msgReceived(data []byte, opt *packet.DecodeOptions) (state, string) {
+func (s *openConfirmState) msgReceived(data []byte, opt *util.DecodeOptions) (state, string) {
 	msg, err := packet.Decode(bytes.NewBuffer(data), opt)
 	if err != nil {
 		switch bgperr := err.(type) {

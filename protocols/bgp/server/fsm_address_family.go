@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/util"
 	"sync/atomic"
 	"time"
 
@@ -189,12 +191,12 @@ func (f *fsmAddressFamily) dispose() {
 }
 
 func (f *fsmAddressFamily) processUpdate(u *packet.BGPUpdate, bmpPostPolicy bool, timestamp uint32) {
-	if f.safi != packet.SAFIUnicast {
+	if f.safi != util.SAFIUnicast {
 		return
 	}
 
 	f.multiProtocolUpdates(u, bmpPostPolicy, timestamp)
-	if f.afi == packet.AFIIPv4 {
+	if f.afi == util.AFIIPv4 {
 		if u.IsEndOfRIBMarker() {
 			f.endOfRIBMarkerReceived.Store(true)
 		}
@@ -202,7 +204,7 @@ func (f *fsmAddressFamily) processUpdate(u *packet.BGPUpdate, bmpPostPolicy bool
 		f.withdraws(u, bmpPostPolicy, timestamp)
 		f.updates(u, bmpPostPolicy, timestamp)
 	}
-	if f.afi == packet.AFIIPv6 {
+	if f.afi == util.AFIIPv6 {
 		if u.IsEndOfRIBMarker() {
 			f.endOfRIBMarkerReceived.Store(true)
 		}
@@ -252,15 +254,15 @@ func (f *fsmAddressFamily) multiProtocolUpdates(u *packet.BGPUpdate, bmpPostPoli
 	}
 }
 
-func getMPReachAndUnreachNLRIs(u *packet.BGPUpdate) (reach *packet.MultiProtocolReachNLRI, unreach *packet.MultiProtocolUnreachNLRI) {
+func getMPReachAndUnreachNLRIs(u *packet.BGPUpdate) (reach *mplri.MultiProtocolReachNLRI, unreach *mplri.MultiProtocolUnreachNLRI) {
 	for pa := u.PathAttributes; pa != nil; pa = pa.Next {
 		if pa.TypeCode == packet.MultiProtocolReachNLRIAttr {
-			r := pa.Value.(packet.MultiProtocolReachNLRI)
+			r := pa.Value.(mplri.MultiProtocolReachNLRI)
 			reach = &r
 		}
 
 		if pa.TypeCode == packet.MultiProtocolUnreachNLRIAttr {
-			ur := pa.Value.(packet.MultiProtocolUnreachNLRI)
+			ur := pa.Value.(mplri.MultiProtocolUnreachNLRI)
 			unreach = &ur
 		}
 	}
@@ -282,7 +284,7 @@ func (f *fsmAddressFamily) newRoutePath(bmpPostPolicy bool, timestamp uint32) *r
 	}
 }
 
-func (f *fsmAddressFamily) multiProtocolUpdate(path *route.Path, nlri packet.MultiProtocolReachNLRI) {
+func (f *fsmAddressFamily) multiProtocolUpdate(path *route.Path, nlri mplri.MultiProtocolReachNLRI) {
 	if f.afi != nlri.AFI || f.safi != nlri.SAFI {
 		return
 	}
@@ -290,12 +292,16 @@ func (f *fsmAddressFamily) multiProtocolUpdate(path *route.Path, nlri packet.Mul
 	path.BGPPath.PathIdentifier = nlri.NLRI.PathIdentifier
 	path.BGPPath.BGPPathA.NextHop = nlri.NextHop
 
+	path.BGPPath.MPReachNLRI = &nlri
+	path.BGPPath.AFI = nlri.AFI
+	path.BGPPath.SAFI = nlri.SAFI
+
 	for n := nlri.NLRI; n != nil; n = n.Next {
 		f.adjRIBIn.AddPath(n.Prefix, path)
 	}
 }
 
-func (f *fsmAddressFamily) multiProtocolWithdraw(path *route.Path, nlri packet.MultiProtocolUnreachNLRI) {
+func (f *fsmAddressFamily) multiProtocolWithdraw(path *route.Path, nlri mplri.MultiProtocolUnreachNLRI) {
 	if f.afi != nlri.AFI || f.safi != nlri.SAFI {
 		return
 	}

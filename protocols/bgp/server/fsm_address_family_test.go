@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"github.com/bio-routing/bio-rd/util"
 	"testing"
 
 	"github.com/bio-routing/bio-rd/protocols/bgp/packet"
@@ -18,8 +19,8 @@ import (
 
 func TestFSMAFIInitDispose(t *testing.T) {
 	f := &fsmAddressFamily{
-		afi:               packet.AFIIPv4,
-		safi:              packet.SAFIUnicast,
+		afi:               util.AFIIPv4,
+		safi:              util.SAFIUnicast,
 		rib:               locRIB.New("inet.0"),
 		importFilterChain: filter.NewAcceptAllFilterChain(),
 		exportFilterChain: filter.NewAcceptAllFilterChain(),

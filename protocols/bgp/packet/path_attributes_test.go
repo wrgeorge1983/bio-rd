@@ -2,6 +2,8 @@ package packet
 
 import (
 	"bytes"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/util"
 	"testing"
 
 	bnet "github.com/bio-routing/bio-rd/net"
@@ -70,7 +72,7 @@ func TestDecodePathAttrs(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		res, err := decodePathAttrs(bytes.NewBuffer(test.input), uint16(len(test.input)), &DecodeOptions{})
+		res, err := decodePathAttrs(bytes.NewBuffer(test.input), uint16(len(test.input)), &util.DecodeOptions{})
 
 		if test.wantFail && err == nil {
 			t.Errorf("Expected error did not happen for test %q", test.name)
@@ -267,7 +269,7 @@ func TestDecodePathAttr(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		res, _, err := decodePathAttr(bytes.NewBuffer(test.input), &DecodeOptions{})
+		res, _, err := decodePathAttr(bytes.NewBuffer(test.input), &util.DecodeOptions{})
 
 		if test.wantFail && err == nil {
 			t.Errorf("Expected error did not happen for test %q", test.name)
@@ -921,7 +923,7 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 	tests := []struct {
 		name           string
 		input          []byte
-		opt            *DecodeOptions
+		opt            *util.DecodeOptions
 		wantFail       bool
 		explicitLength uint16
 		expected       *PathAttribute
@@ -929,7 +931,7 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 		{
 			name:           "incomplete",
 			input:          []byte{0, 0, 0, 0},
-			opt:            &DecodeOptions{},
+			opt:            &util.DecodeOptions{},
 			wantFail:       true,
 			explicitLength: 32,
 		},
@@ -942,14 +944,14 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 				0x00,                                     // RESERVED
 				0x30, 0x26, 0x00, 0x00, 0x06, 0xff, 0x05, // Prefix
 			},
-			opt: &DecodeOptions{},
+			opt: &util.DecodeOptions{},
 			expected: &PathAttribute{
 				Length: 28,
-				Value: MultiProtocolReachNLRI{
-					AFI:     AFIIPv6,
-					SAFI:    SAFIUnicast,
+				Value: mplri.MultiProtocolReachNLRI{
+					AFI:     util.AFIIPv6,
+					SAFI:    util.SAFIUnicast,
 					NextHop: bnet.IPv6FromBlocks(0x2001, 0x678, 0x1e0, 0, 0, 0, 0, 0x2).Ptr(),
-					NLRI: &NLRI{
+					NLRI: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv6FromBlocks(0x2600, 0x6, 0xff05, 0, 0, 0, 0, 0), 48).Ptr(),
 					},
 				},
@@ -965,14 +967,14 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 				0x00,                                     // RESERVED
 				0x30, 0x26, 0x00, 0x00, 0x06, 0xff, 0x05, // Prefix
 			},
-			opt: &DecodeOptions{},
+			opt: &util.DecodeOptions{},
 			expected: &PathAttribute{
 				Length: 44,
-				Value: MultiProtocolReachNLRI{
-					AFI:     AFIIPv6,
-					SAFI:    SAFIUnicast,
+				Value: mplri.MultiProtocolReachNLRI{
+					AFI:     util.AFIIPv6,
+					SAFI:    util.SAFIUnicast,
 					NextHop: bnet.IPv6FromBlocks(0x2001, 0x678, 0x1e0, 0, 0, 0, 0, 0x2).Ptr(),
-					NLRI: &NLRI{
+					NLRI: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv6FromBlocks(0x2600, 0x6, 0xff05, 0, 0, 0, 0, 0), 48).Ptr(),
 					},
 				},
@@ -983,7 +985,7 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 			input: []byte{
 				0x00, 0x02, // AFI
 			},
-			opt:      &DecodeOptions{},
+			opt:      &util.DecodeOptions{},
 			wantFail: true,
 		},
 		{
@@ -993,7 +995,7 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 				0x01,                                           // SAFI
 				0x10, 0x20, 0x01, 0x06, 0x78, 0x01, 0xe0, 0x00, // incomplete NextHop
 			},
-			opt:      &DecodeOptions{},
+			opt:      &util.DecodeOptions{},
 			wantFail: true,
 		},
 		{
@@ -1004,12 +1006,12 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 				0x10, 0x20, 0x01, 0x06, 0x78, 0x01, 0xe0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, // NextHop
 				0x00, // RESERVED
 			},
-			opt: &DecodeOptions{},
+			opt: &util.DecodeOptions{},
 			expected: &PathAttribute{
 				Length: 21,
-				Value: MultiProtocolReachNLRI{
-					AFI:     AFIIPv6,
-					SAFI:    SAFIUnicast,
+				Value: mplri.MultiProtocolReachNLRI{
+					AFI:     util.AFIIPv6,
+					SAFI:    util.SAFIUnicast,
 					NextHop: bnet.IPv6FromBlocks(0x2001, 0x678, 0x1e0, 0, 0, 0, 0, 0x2).Ptr(),
 				},
 			},
@@ -1023,7 +1025,7 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 				0x00,             // RESERVED
 				0x30, 0x26, 0x00, // Prefix
 			},
-			opt:      &DecodeOptions{},
+			opt:      &util.DecodeOptions{},
 			wantFail: true,
 		},
 		{
@@ -1036,16 +1038,16 @@ func TestDecodeMultiProtocolReachNLRI(t *testing.T) {
 				0x00, 0x00, 0x00, 0x01,
 				0x30, 0x26, 0x00, 0x00, 0x06, 0xff, 0x05, // Prefix
 			},
-			opt: &DecodeOptions{
+			opt: &util.DecodeOptions{
 				AddPathIPv6Unicast: true,
 			},
 			expected: &PathAttribute{
 				Length: 32,
-				Value: MultiProtocolReachNLRI{
-					AFI:     AFIIPv6,
-					SAFI:    SAFIUnicast,
+				Value: mplri.MultiProtocolReachNLRI{
+					AFI:     util.AFIIPv6,
+					SAFI:    util.SAFIUnicast,
 					NextHop: bnet.IPv6FromBlocks(0x2001, 0x678, 0x1e0, 0, 0, 0, 0, 0x2).Ptr(),
-					NLRI: &NLRI{
+					NLRI: &mplri.NLRI{
 						PathIdentifier: 1,
 						Prefix:         bnet.NewPfx(bnet.IPv6FromBlocks(0x2600, 0x6, 0xff05, 0, 0, 0, 0, 0), 48).Ptr(),
 					},
@@ -1107,10 +1109,10 @@ func TestDecodeMultiProtocolUnreachNLRI(t *testing.T) {
 			},
 			expected: &PathAttribute{
 				Length: 10,
-				Value: MultiProtocolUnreachNLRI{
-					AFI:  AFIIPv6,
-					SAFI: SAFIUnicast,
-					NLRI: &NLRI{
+				Value: mplri.MultiProtocolUnreachNLRI{
+					AFI:  util.AFIIPv6,
+					SAFI: util.SAFIUnicast,
+					NLRI: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv6FromBlocks(0x2620, 0x110, 0x9000, 0, 0, 0, 0, 0), 44).Ptr(),
 					},
 				},
@@ -1146,7 +1148,7 @@ func TestDecodeMultiProtocolUnreachNLRI(t *testing.T) {
 			pa := &PathAttribute{
 				Length: l,
 			}
-			err := pa.decodeMultiProtocolUnreachNLRI(bytes.NewBuffer(test.input), &DecodeOptions{})
+			err := pa.decodeMultiProtocolUnreachNLRI(bytes.NewBuffer(test.input), &util.DecodeOptions{})
 
 			if test.wantFail {
 				if err != nil {
@@ -1650,7 +1652,7 @@ func TestSerializeASPath(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			buf := bytes.NewBuffer(nil)
-			opt := &EncodeOptions{
+			opt := &types.EncodeOptions{
 				Use32BitASN: test.use32BitASN,
 			}
 			n := test.input.serializeASPath(buf, opt)
@@ -1941,7 +1943,7 @@ func TestSerialize(t *testing.T) {
 		{
 			name: "Withdraw only",
 			msg: &BGPUpdate{
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(100, 110, 120, 0), 24).Ptr(),
 				},
 			},
@@ -1957,7 +1959,7 @@ func TestSerialize(t *testing.T) {
 		{
 			name: "NLRI only",
 			msg: &BGPUpdate{
-				NLRI: &NLRI{
+				NLRI: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(100, 110, 128, 0), 17).Ptr(),
 				},
 			},
@@ -1995,9 +1997,9 @@ func TestSerialize(t *testing.T) {
 		{
 			name: "Full test",
 			msg: &BGPUpdate{
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -2040,9 +2042,9 @@ func TestSerialize(t *testing.T) {
 						},
 					},
 				},
-				NLRI: &NLRI{
+				NLRI: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(8, 8, 8, 0), 24).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(185, 65, 240, 0), 22).Ptr(),
 					},
 				},
@@ -2108,7 +2110,7 @@ func TestSerialize(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		res, err := test.msg.SerializeUpdate(&EncodeOptions{})
+		res, err := test.msg.SerializeUpdate(&types.EncodeOptions{})
 		if err != nil {
 			if test.wantFail {
 				continue
@@ -2137,7 +2139,7 @@ func TestSerializeAddPath(t *testing.T) {
 		{
 			name: "Withdraw only",
 			msg: &BGPUpdate{
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					PathIdentifier: 257,
 					Prefix:         bnet.NewPfx(bnet.IPv4FromOctets(100, 110, 120, 0), 24).Ptr(),
 				},
@@ -2155,7 +2157,7 @@ func TestSerializeAddPath(t *testing.T) {
 		{
 			name: "NLRI only",
 			msg: &BGPUpdate{
-				NLRI: &NLRI{
+				NLRI: &mplri.NLRI{
 					PathIdentifier: 257,
 					Prefix:         bnet.NewPfx(bnet.IPv4FromOctets(100, 110, 128, 0), 17).Ptr(),
 				},
@@ -2195,9 +2197,9 @@ func TestSerializeAddPath(t *testing.T) {
 		{
 			name: "Full test",
 			msg: &BGPUpdate{
-				WithdrawnRoutes: &NLRI{
+				WithdrawnRoutes: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(10, 0, 0, 0), 8).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 168, 0, 0), 16).Ptr(),
 					},
 				},
@@ -2240,9 +2242,9 @@ func TestSerializeAddPath(t *testing.T) {
 						},
 					},
 				},
-				NLRI: &NLRI{
+				NLRI: &mplri.NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(8, 8, 8, 0), 24).Ptr(),
-					Next: &NLRI{
+					Next: &mplri.NLRI{
 						Prefix: bnet.NewPfx(bnet.IPv4FromOctets(185, 65, 240, 0), 22).Ptr(),
 					},
 				},
@@ -2312,7 +2314,7 @@ func TestSerializeAddPath(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		opt := &EncodeOptions{
+		opt := &types.EncodeOptions{
 			UseAddPath: true,
 		}
 		res, err := test.msg.SerializeUpdate(opt)

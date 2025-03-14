@@ -1,12 +1,11 @@
-package packet
+package mplri
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math"
-
-	bnet "github.com/bio-routing/bio-rd/net"
+	"github.com/bio-routing/bio-rd/net"
+	"github.com/bio-routing/bio-rd/util"
 	"github.com/bio-routing/bio-rd/util/decode"
 	"github.com/bio-routing/tflow2/convert"
 )
@@ -20,6 +19,10 @@ const (
 )
 
 type RouteDistinguisher uint64
+
+func (rd *RouteDistinguisher) ToProto() uint64 {
+	return uint64(*rd)
+}
 
 func (rd *RouteDistinguisher) serialize(buf *bytes.Buffer) {
 	if rd == nil {
@@ -39,7 +42,7 @@ type NLRI struct {
 	PathIdentifier     uint32
 	RouteDistinguisher *RouteDistinguisher // for VPNv4 and VPNv6 routes
 	LabelStack         []LabelStackEntry
-	Prefix             *bnet.Prefix
+	Prefix             *net.Prefix
 	Next               *NLRI
 }
 
@@ -52,7 +55,7 @@ func decodeRouteDistinguisher(buf *bytes.Buffer) (*RouteDistinguisher, error) {
 	return &rd, nil
 }
 
-func decodeNLRIs(buf *bytes.Buffer, length uint16, afi uint16, safi uint8, addPath bool) (*NLRI, error) {
+func DecodeNLRIs(buf *bytes.Buffer, length uint16, afi uint16, safi uint8, addPath bool) (*NLRI, error) {
 	var ret *NLRI
 	var eol *NLRI
 	var nlri *NLRI
@@ -102,7 +105,7 @@ func decodeNLRI(buf *bytes.Buffer, afi uint16, safi uint8, addPath bool) (*NLRI,
 	}
 	consumed++
 
-	if safi == SAFILabeledUnicast || safi == SAFIMPLSVPN {
+	if safi == util.SAFILabeledUnicast || safi == util.SAFIMPLSVPN {
 		nlri.LabelStack = make([]LabelStackEntry, 0, 1)
 		for {
 			lse, err := decodeLabelStackEntry(buf)
@@ -120,7 +123,7 @@ func decodeNLRI(buf *bytes.Buffer, afi uint16, safi uint8, addPath bool) (*NLRI,
 		}
 	}
 
-	if safi == SAFIMPLSVPN {
+	if safi == util.SAFIMPLSVPN {
 		rdValue, err := decodeRouteDistinguisher(buf)
 		if err != nil {
 			return nil, consumed, fmt.Errorf("decode route distinguisher failed: %w", err)
@@ -131,7 +134,7 @@ func decodeNLRI(buf *bytes.Buffer, afi uint16, safi uint8, addPath bool) (*NLRI,
 
 	}
 
-	numBytes := uint8(BytesInAddr(pfxLen))
+	numBytes := uint8(util.BytesInAddr(pfxLen))
 	bytes := make([]byte, numBytes)
 
 	r, err := buf.Read(bytes)
@@ -143,7 +146,7 @@ func decodeNLRI(buf *bytes.Buffer, afi uint16, safi uint8, addPath bool) (*NLRI,
 		return nil, consumed, fmt.Errorf("expected %d bytes for NLRI, only %d remaining", numBytes, r)
 	}
 
-	pfx, err := deserializePrefix(bytes, pfxLen, afi)
+	pfx, err := util.DeserializePrefix(bytes, pfxLen, afi)
 	if err != nil {
 		return nil, consumed, err
 	}
@@ -152,7 +155,7 @@ func decodeNLRI(buf *bytes.Buffer, afi uint16, safi uint8, addPath bool) (*NLRI,
 	return nlri, consumed, nil
 }
 
-func (n *NLRI) serialize(buf *bytes.Buffer, addPath bool, safi uint8) uint8 {
+func (n *NLRI) Serialize(buf *bytes.Buffer, addPath bool, safi uint8) uint8 {
 	numBytes := uint8(0)
 
 	if addPath {
@@ -161,39 +164,34 @@ func (n *NLRI) serialize(buf *bytes.Buffer, addPath bool, safi uint8) uint8 {
 	}
 
 	pfxLen := n.Prefix.Len()
-	if safi == SAFILabeledUnicast || safi == SAFIMPLSVPN {
+	if safi == util.SAFILabeledUnicast || safi == util.SAFIMPLSVPN {
 		pfxLen += uint8(len(n.LabelStack) * BitsPerLabel)
 	}
-	if safi == SAFIMPLSVPN {
+	if safi == util.SAFIMPLSVPN {
 		pfxLen += BitsPerRouteDistinguisher
 	}
 
 	buf.WriteByte(pfxLen)
 	numBytes++
 
-	if safi == SAFILabeledUnicast || safi == SAFIMPLSVPN {
+	if safi == util.SAFILabeledUnicast || safi == util.SAFIMPLSVPN {
 		labelCount := len(n.LabelStack)
 		for i, l := range n.LabelStack {
 			l.serialize(buf, i == labelCount-1)
 			numBytes += BytesPerLabel
 		}
 	}
-	if safi == SAFIMPLSVPN {
+	if safi == util.SAFIMPLSVPN {
 		// if n.RouteDistinguisher == nil {
-		// 	return 0, fmt.Errorf("cannot serialize VPN route without Route Distinguisher")
+		// 	return 0, fmt.Errorf("cannot Serialize VPN route without Route Distinguisher")
 		// }
 		n.RouteDistinguisher.serialize(buf)
 		numBytes += BytesPerRouteDistinguisher
 	}
 
-	pfxNumBytes := BytesInAddr(n.Prefix.Len())
+	pfxNumBytes := util.BytesInAddr(n.Prefix.Len())
 	buf.Write(n.Prefix.Addr().Bytes()[:pfxNumBytes])
 	numBytes += pfxNumBytes
 
 	return numBytes
-}
-
-// BytesInAddr gets the amount of bytes needed to encode an NLRI of prefix length pfxlen
-func BytesInAddr(pfxlen uint8) uint8 {
-	return uint8(math.Ceil(float64(pfxlen) / 8))
 }

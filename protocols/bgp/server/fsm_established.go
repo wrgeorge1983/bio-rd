@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/util"
 	"sync/atomic"
 	"time"
 
@@ -140,7 +142,7 @@ func (s *establishedState) keepaliveTimerExpired() (state, string) {
 	return newEstablishedState(s.fsm), s.fsm.reason
 }
 
-func (s *establishedState) msgReceived(data []byte, opt *packet.DecodeOptions, bmpPostPolicy bool, timestamp uint32) (state, string) {
+func (s *establishedState) msgReceived(data []byte, opt *util.DecodeOptions, bmpPostPolicy bool, timestamp uint32) (state, string) {
 	msg, err := packet.Decode(bytes.NewBuffer(data), opt)
 	if err != nil {
 		switch bgperr := err.(type) {
@@ -192,18 +194,18 @@ func (s *establishedState) update(u *packet.BGPUpdate, bmpPostPolicy bool, times
 
 	afi, safi := s.updateAddressFamily(u)
 
-	if safi != packet.SAFIUnicast {
+	if safi != util.SAFIUnicast {
 		// only unicast support, so other SAFIs are ignored
 		return newEstablishedState(s.fsm), s.fsm.reason
 	}
 
 	switch afi {
-	case packet.AFIIPv4:
+	case util.AFIIPv4:
 		if s.fsm.ipv4Unicast == nil {
 			log.Info("Received update for family IPv4 unicast, but this family is not configured.")
 		}
 
-	case packet.AFIIPv6:
+	case util.AFIIPv6:
 		if s.fsm.ipv6Unicast == nil {
 			log.Info("Received update for family IPv6 unicast, but this family is not configured.")
 		}
@@ -215,17 +217,17 @@ func (s *establishedState) update(u *packet.BGPUpdate, bmpPostPolicy bool, times
 
 func (s *establishedState) updateAddressFamily(u *packet.BGPUpdate) (afi uint16, safi uint8) {
 	if u.WithdrawnRoutes != nil || u.NLRI != nil {
-		return packet.AFIIPv4, packet.SAFIUnicast
+		return util.AFIIPv4, util.SAFIUnicast
 	}
 
 	for cur := u.PathAttributes; cur != nil; cur = cur.Next {
 		if cur.TypeCode == packet.MultiProtocolReachNLRIAttr {
-			a := cur.Value.(packet.MultiProtocolReachNLRI)
+			a := cur.Value.(mplri.MultiProtocolReachNLRI)
 			return a.AFI, a.SAFI
 		}
 
 		if cur.TypeCode == packet.MultiProtocolUnreachNLRIAttr {
-			a := cur.Value.(packet.MultiProtocolUnreachNLRI)
+			a := cur.Value.(mplri.MultiProtocolUnreachNLRI)
 			return a.AFI, a.SAFI
 		}
 	}

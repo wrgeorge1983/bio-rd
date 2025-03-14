@@ -3,27 +3,29 @@ package packet
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
 
 	"github.com/bio-routing/tflow2/convert"
 )
 
 type BGPUpdate struct {
 	WithdrawnRoutesLen uint16
-	WithdrawnRoutes    *NLRI
+	WithdrawnRoutes    *mplri.NLRI
 	TotalPathAttrLen   uint16
 	PathAttributes     *PathAttribute
-	NLRI               *NLRI
+	NLRI               *mplri.NLRI
 	SAFI               uint8
 }
 
 // SerializeUpdate serializes an BGPUpdate to wire format
-func (b *BGPUpdate) SerializeUpdate(opt *EncodeOptions) ([]byte, error) {
+func (b *BGPUpdate) SerializeUpdate(opt *types.EncodeOptions) ([]byte, error) {
 	budget := MaxLen - MinLen
 	buf := bytes.NewBuffer(nil)
 
 	withdrawBuf := bytes.NewBuffer(nil)
 	for withdraw := b.WithdrawnRoutes; withdraw != nil; withdraw = withdraw.Next {
-		budget -= int(withdraw.serialize(withdrawBuf, opt.UseAddPath, b.SAFI))
+		budget -= int(withdraw.Serialize(withdrawBuf, opt.UseAddPath, b.SAFI))
 		if budget < 0 {
 			return nil, fmt.Errorf("update too long")
 		}
@@ -40,7 +42,7 @@ func (b *BGPUpdate) SerializeUpdate(opt *EncodeOptions) ([]byte, error) {
 
 	nlriBuf := bytes.NewBuffer(nil)
 	for nlri := b.NLRI; nlri != nil; nlri = nlri.Next {
-		budget -= int(nlri.serialize(nlriBuf, opt.UseAddPath, b.SAFI))
+		budget -= int(nlri.Serialize(nlriBuf, opt.UseAddPath, b.SAFI))
 		if budget < 0 {
 			return nil, fmt.Errorf("update too long")
 		}

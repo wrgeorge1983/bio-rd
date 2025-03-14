@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/bio-routing/bio-rd/util"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 
 	bnet "github.com/bio-routing/bio-rd/net"
 	"github.com/bio-routing/bio-rd/protocols/bgp/metrics"
-	"github.com/bio-routing/bio-rd/protocols/bgp/packet"
 )
 
 func TestMetrics(t *testing.T) {
@@ -68,14 +68,14 @@ func TestMetrics(t *testing.T) {
 						Since:           establishedTime,
 						AddressFamilies: []*metrics.BGPAddressFamilyMetrics{
 							{
-								AFI:            packet.AFIIPv4,
-								SAFI:           packet.SAFIUnicast,
+								AFI:            util.AFIIPv4,
+								SAFI:           util.SAFIUnicast,
 								RoutesReceived: 5,
 								RoutesSent:     6,
 							},
 							{
-								AFI:            packet.AFIIPv6,
-								SAFI:           packet.SAFIUnicast,
+								AFI:            util.AFIIPv6,
+								SAFI:           util.SAFIUnicast,
 								RoutesReceived: 7,
 								RoutesSent:     8,
 							},

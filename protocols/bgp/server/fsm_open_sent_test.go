@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/bio-routing/bio-rd/util"
 	"net"
 	"testing"
 
@@ -118,8 +119,8 @@ func TestProcessMultiProtocolCapability(t *testing.T) {
 			},
 			caps: []packet.MultiProtocolCapability{
 				{
-					AFI:  packet.AFIIPv4,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv4,
+					SAFI: util.SAFIUnicast,
 				},
 			},
 		},
@@ -131,8 +132,8 @@ func TestProcessMultiProtocolCapability(t *testing.T) {
 			},
 			caps: []packet.MultiProtocolCapability{
 				{
-					AFI:  packet.AFIIPv4,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv4,
+					SAFI: util.SAFIUnicast,
 				},
 			},
 			expectIPv4MultiProtocol: true,
@@ -144,8 +145,8 @@ func TestProcessMultiProtocolCapability(t *testing.T) {
 			},
 			caps: []packet.MultiProtocolCapability{
 				{
-					AFI:  packet.AFIIPv6,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv6,
+					SAFI: util.SAFIUnicast,
 				},
 			},
 			expectIPv6MultiProtocol: true,
@@ -158,12 +159,12 @@ func TestProcessMultiProtocolCapability(t *testing.T) {
 			},
 			caps: []packet.MultiProtocolCapability{
 				{
-					AFI:  packet.AFIIPv6,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv6,
+					SAFI: util.SAFIUnicast,
 				},
 				{
-					AFI:  packet.AFIIPv4,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv4,
+					SAFI: util.SAFIUnicast,
 				},
 			},
 			expectIPv6MultiProtocol: true,
@@ -177,12 +178,12 @@ func TestProcessMultiProtocolCapability(t *testing.T) {
 			},
 			caps: []packet.MultiProtocolCapability{
 				{
-					AFI:  packet.AFIIPv6,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv6,
+					SAFI: util.SAFIUnicast,
 				},
 				{
-					AFI:  packet.AFIIPv4,
-					SAFI: packet.SAFIUnicast,
+					AFI:  util.AFIIPv4,
+					SAFI: util.SAFIUnicast,
 				},
 			},
 			expectIPv4MultiProtocol: true,
@@ -231,8 +232,8 @@ func TestProcessAddPathCapabilityTX(t *testing.T) {
 			caps: []packet.AddPathCapability{
 				{
 					packet.AddPathCapabilityTuple{
-						AFI:         packet.AFIIPv4,
-						SAFI:        packet.SAFIUnicast,
+						AFI:         util.AFIIPv4,
+						SAFI:        util.SAFIUnicast,
 						SendReceive: packet.AddPathReceive,
 					},
 				},
@@ -259,8 +260,8 @@ func TestProcessAddPathCapabilityTX(t *testing.T) {
 			caps: []packet.AddPathCapability{
 				{
 					packet.AddPathCapabilityTuple{
-						AFI:         packet.AFIIPv4,
-						SAFI:        packet.SAFIUnicast,
+						AFI:         util.AFIIPv4,
+						SAFI:        util.SAFIUnicast,
 						SendReceive: packet.AddPathReceive,
 					},
 				},

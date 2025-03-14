@@ -1,10 +1,11 @@
-package packet
+package mplri
 
 import (
 	"bytes"
 	"fmt"
-
-	bnet "github.com/bio-routing/bio-rd/net"
+	"github.com/bio-routing/bio-rd/net"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
+	"github.com/bio-routing/bio-rd/util"
 	"github.com/bio-routing/bio-rd/util/decode"
 	"github.com/bio-routing/tflow2/convert"
 )
@@ -13,11 +14,11 @@ import (
 type MultiProtocolReachNLRI struct {
 	AFI     uint16
 	SAFI    uint8
-	NextHop *bnet.IP
+	NextHop *net.IP
 	NLRI    *NLRI
 }
 
-func (n *MultiProtocolReachNLRI) serialize(buf *bytes.Buffer, opt *EncodeOptions) uint16 {
+func (n *MultiProtocolReachNLRI) Serialize(buf *bytes.Buffer, opt *types.EncodeOptions) uint16 {
 	nextHop := n.NextHop.Bytes()
 
 	tempBuf := bytes.NewBuffer(nil)
@@ -28,7 +29,7 @@ func (n *MultiProtocolReachNLRI) serialize(buf *bytes.Buffer, opt *EncodeOptions
 	tempBuf.WriteByte(0) // RESERVED
 
 	for cur := n.NLRI; cur != nil; cur = cur.Next {
-		cur.serialize(tempBuf, opt.UseAddPath, n.SAFI)
+		cur.Serialize(tempBuf, opt.UseAddPath, n.SAFI)
 	}
 
 	buf.Write(tempBuf.Bytes())
@@ -36,7 +37,7 @@ func (n *MultiProtocolReachNLRI) serialize(buf *bytes.Buffer, opt *EncodeOptions
 	return uint16(tempBuf.Len())
 }
 
-func deserializeMultiProtocolReachNLRI(b []byte, opt *DecodeOptions) (MultiProtocolReachNLRI, error) {
+func DeserializeMultiProtocolReachNLRI(b []byte, opt *util.DecodeOptions) (MultiProtocolReachNLRI, error) {
 	n := MultiProtocolReachNLRI{}
 	nextHopLength := uint8(0)
 
@@ -68,7 +69,7 @@ func deserializeMultiProtocolReachNLRI(b []byte, opt *DecodeOptions) (MultiProto
 		// second next-hop is lladdr (see rfc2545 sec 3 par 2)
 		firstNextHopLength = 16
 	}
-	nh, err := bnet.IPFromBytes(variable[:firstNextHopLength])
+	nh, err := net.IPFromBytes(variable[:firstNextHopLength])
 	if err != nil {
 		return MultiProtocolReachNLRI{}, fmt.Errorf("failed to decode next hop IP: %w", err)
 	}
@@ -82,7 +83,7 @@ func deserializeMultiProtocolReachNLRI(b []byte, opt *DecodeOptions) (MultiProto
 	variable = variable[1+nextHopLength:] // 1 <- RESERVED field
 
 	buf := bytes.NewBuffer(variable)
-	nlri, err := decodeNLRIs(buf, uint16(buf.Len()), n.AFI, n.SAFI, opt.addPath(n.AFI, n.SAFI))
+	nlri, err := DecodeNLRIs(buf, uint16(buf.Len()), n.AFI, n.SAFI, opt.AddPath(n.AFI, n.SAFI))
 	if err != nil {
 		return MultiProtocolReachNLRI{}, err
 	}

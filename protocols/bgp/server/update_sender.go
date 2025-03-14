@@ -3,6 +3,9 @@ package server
 import (
 	"errors"
 	"fmt"
+	"github.com/bio-routing/bio-rd/protocols/bgp/mplri"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
+	"github.com/bio-routing/bio-rd/util"
 	"io"
 	"sync"
 	"sync/atomic"
@@ -21,7 +24,7 @@ type UpdateSender struct {
 	clientManager *routingtable.ClientManager
 	fsm           *FSM
 	addressFamily *fsmAddressFamily
-	options       *packet.EncodeOptions
+	options       *types.EncodeOptions
 	iBGP          bool
 	rrClient      bool
 	toSendMu      sync.Mutex
@@ -43,7 +46,7 @@ func newUpdateSender(f *fsmAddressFamily) *UpdateSender {
 		rrClient:      f.fsm.peer.routeReflectorClient,
 		destroyCh:     make(chan struct{}),
 		toSend:        make(map[string]*pathPfxs),
-		options: &packet.EncodeOptions{
+		options: &types.EncodeOptions{
 			Use32BitASN: f.fsm.supports4OctetASN,
 			UseAddPath:  !f.addPathTX.BestOnly,
 		},
@@ -155,10 +158,10 @@ func (u *UpdateSender) _getUpdateInformation(pathNLRIs *pathPfxs) (*packet.PathA
 	updatesPrefixes := make([][]*bnet.Prefix, 0, 1)
 	prefixes := make([]*bnet.Prefix, 0, 1)
 	for _, pfx := range pathNLRIs.pfxs {
-		budget -= int(packet.BytesInAddr(pfx.Len())) + 1
+		budget -= int(util.BytesInAddr(pfx.Len())) + 1
 
 		if u.options.UseAddPath {
-			budget -= packet.PathIdentifierLen
+			budget -= mplri.PathIdentifierLen
 		}
 
 		if budget < 0 {
@@ -190,12 +193,12 @@ func (u *UpdateSender) getBudget(pathNLRIs *pathPfxs) int {
 }
 
 func (u *UpdateSender) updateOverhead() int {
-	if u.addressFamily.afi == packet.AFIIPv4 && !u.addressFamily.multiProtocol {
+	if u.addressFamily.afi == util.AFIIPv4 && !u.addressFamily.multiProtocol {
 		return 0
 	}
 
-	addrLen := packet.AFIIPv4
-	if u.addressFamily.afi == packet.AFIIPv6 {
+	addrLen := util.AFIIPv4
+	if u.addressFamily.afi == util.AFIIPv6 {
 		addrLen = packet.IPv6Len
 	}
 
@@ -222,7 +225,7 @@ func (u *UpdateSender) sendUpdates(pathAttrs *packet.PathAttribute, updatePrefix
 }
 
 func (u *UpdateSender) updateMessageForPrefixes(pfxs []*bnet.Prefix, pa *packet.PathAttribute, pathID uint32) *packet.BGPUpdate {
-	if u.addressFamily.afi == packet.AFIIPv4 && !u.addressFamily.multiProtocol {
+	if u.addressFamily.afi == util.AFIIPv4 && !u.addressFamily.multiProtocol {
 		return u.bgpUpdate(pfxs, pa, pathID)
 	}
 
@@ -239,9 +242,9 @@ func (u *UpdateSender) bgpUpdate(pfxs []*bnet.Prefix, pa *packet.PathAttribute, 
 		SAFI:           u.addressFamily.safi,
 	}
 
-	var nlri *packet.NLRI
+	var nlri *mplri.NLRI
 	for _, pfx := range pfxs {
-		nlri = &packet.NLRI{
+		nlri = &mplri.NLRI{
 			PathIdentifier: pathID,
 			Prefix:         pfx,
 			Next:           update.NLRI,
@@ -257,7 +260,7 @@ func (u *UpdateSender) bgpUpdateMultiProtocol(pfxs []*bnet.Prefix, pa *packet.Pa
 
 	attrs := &packet.PathAttribute{
 		TypeCode: packet.MultiProtocolReachNLRIAttr,
-		Value: packet.MultiProtocolReachNLRI{
+		Value: mplri.MultiProtocolReachNLRI{
 			AFI:     u.addressFamily.afi,
 			SAFI:    u.addressFamily.safi,
 			NextHop: nextHop,
@@ -272,10 +275,10 @@ func (u *UpdateSender) bgpUpdateMultiProtocol(pfxs []*bnet.Prefix, pa *packet.Pa
 	}
 }
 
-func (u *UpdateSender) nlriForPrefixes(pfxs []*bnet.Prefix, pathID uint32) *packet.NLRI {
-	var prev, res *packet.NLRI
+func (u *UpdateSender) nlriForPrefixes(pfxs []*bnet.Prefix, pathID uint32) *mplri.NLRI {
+	var prev, res *mplri.NLRI
 	for _, pfx := range pfxs {
-		cur := &packet.NLRI{
+		cur := &mplri.NLRI{
 			Prefix:         pfx,
 			PathIdentifier: pathID,
 		}
@@ -333,12 +336,12 @@ func (u *UpdateSender) withdrawPrefix(out io.Writer, pfx *bnet.Prefix, p *route.
 		return errors.New("got nil BGPPath")
 	}
 
-	if u.addressFamily.afi == packet.AFIIPv4 && !u.addressFamily.multiProtocol {
+	if u.addressFamily.afi == util.AFIIPv4 && !u.addressFamily.multiProtocol {
 		return u.withdrawPrefixIPv4(out, pfx, p)
 	}
 
 	if !u.addressFamily.multiProtocol {
-		return fmt.Errorf(packet.AFIName(u.addressFamily.afi) + " was not negotiated")
+		return fmt.Errorf(util.AFName(u.addressFamily.afi, u.addressFamily.safi) + " was not negotiated")
 	}
 
 	return u.withdrawPrefixMultiProtocol(out, pfx, p)
@@ -346,8 +349,8 @@ func (u *UpdateSender) withdrawPrefix(out io.Writer, pfx *bnet.Prefix, p *route.
 
 func (u *UpdateSender) withdrawPrefixIPv4(out io.Writer, pfx *bnet.Prefix, p *route.Path) error {
 	update := &packet.BGPUpdate{
-		SAFI: packet.SAFIUnicast,
-		WithdrawnRoutes: &packet.NLRI{
+		SAFI: util.SAFIUnicast,
+		WithdrawnRoutes: &mplri.NLRI{
 			PathIdentifier: p.BGPPath.PathIdentifier,
 			Prefix:         pfx,
 		},
@@ -365,10 +368,10 @@ func (u *UpdateSender) withdrawPrefixMultiProtocol(out io.Writer, pfx *bnet.Pref
 	update := &packet.BGPUpdate{
 		PathAttributes: &packet.PathAttribute{
 			TypeCode: packet.MultiProtocolUnreachNLRIAttr,
-			Value: packet.MultiProtocolUnreachNLRI{
+			Value: mplri.MultiProtocolUnreachNLRI{
 				AFI:  u.addressFamily.afi,
 				SAFI: u.addressFamily.safi,
-				NLRI: &packet.NLRI{
+				NLRI: &mplri.NLRI{
 					PathIdentifier: pathID,
 					Prefix:         pfx,
 				},

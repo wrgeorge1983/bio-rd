@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/bio-routing/bio-rd/util"
 	"io"
 	"net"
 	"sync"
@@ -118,11 +119,11 @@ func newFSM(peer *peer) *FSM {
 	}
 
 	if peer.ipv4 != nil {
-		f.ipv4Unicast = newFSMAddressFamily(packet.AFIIPv4, packet.SAFIUnicast, peer.ipv4, f)
+		f.ipv4Unicast = newFSMAddressFamily(util.AFIIPv4, util.SAFIUnicast, peer.ipv4, f)
 	}
 
 	if peer.ipv6 != nil {
-		f.ipv6Unicast = newFSMAddressFamily(packet.AFIIPv6, packet.SAFIUnicast, peer.ipv6, f)
+		f.ipv6Unicast = newFSMAddressFamily(util.AFIIPv6, util.SAFIUnicast, peer.ipv6, f)
 	}
 
 	return f
@@ -153,14 +154,14 @@ func (fsm *FSM) updateLastUpdateOrKeepalive() {
 }
 
 func (fsm *FSM) addressFamily(afi uint16, safi uint8) *fsmAddressFamily {
-	if safi != packet.SAFIUnicast {
+	if safi != util.SAFIUnicast {
 		return nil
 	}
 
 	switch afi {
-	case packet.AFIIPv4:
+	case util.AFIIPv4:
 		return fsm.ipv4Unicast
-	case packet.AFIIPv6:
+	case util.AFIIPv6:
 		return fsm.ipv6Unicast
 	default:
 		return nil
@@ -320,17 +321,17 @@ func (fsm *FSM) msgReceiver() error {
 	}
 }
 
-func (fsm *FSM) decodeOptions() *packet.DecodeOptions {
-	ret := &packet.DecodeOptions{
+func (fsm *FSM) decodeOptions() *util.DecodeOptions {
+	ret := &util.DecodeOptions{
 		Use32BitASN: fsm.supports4OctetASN,
 	}
 
-	ipv4unicast := fsm.addressFamily(packet.AFIIPv4, packet.SAFIUnicast)
+	ipv4unicast := fsm.addressFamily(util.AFIIPv4, util.SAFIUnicast)
 	if ipv4unicast != nil {
 		ret.AddPathIPv4Unicast = ipv4unicast.addPathRX
 	}
 
-	ipv6unicast := fsm.addressFamily(packet.AFIIPv6, packet.SAFIUnicast)
+	ipv6unicast := fsm.addressFamily(util.AFIIPv6, util.SAFIUnicast)
 	if ipv6unicast != nil {
 		ret.AddPathIPv6Unicast = ipv6unicast.addPathRX
 	}

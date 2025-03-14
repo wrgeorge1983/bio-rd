@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"fmt"
+	"github.com/bio-routing/bio-rd/util"
 	"math"
 	"time"
 
@@ -85,7 +86,7 @@ func (s *openSentState) holdTimerExpired() (state, string) {
 	return newIdleState(s.fsm), "Holdtimer expired"
 }
 
-func (s *openSentState) msgReceived(data []byte, opt *packet.DecodeOptions) (state, string) {
+func (s *openSentState) msgReceived(data []byte, opt *util.DecodeOptions) (state, string) {
 	msg, err := packet.Decode(bytes.NewBuffer(data), opt)
 	if err != nil {
 		switch bgperr := err.(type) {
@@ -200,11 +201,11 @@ func (s *openSentState) processCapability(cap packet.Capability) {
 }
 
 func (s *openSentState) processMultiProtocolCapability(cap packet.MultiProtocolCapability) {
-	if cap.SAFI != packet.SAFIUnicast {
+	if cap.SAFI != util.SAFIUnicast {
 		return
 	}
 
-	if cap.AFI == packet.AFIIPv4 && !s.fsm.peer.ipv4MultiProtocolAdvertised {
+	if cap.AFI == util.AFIIPv4 && !s.fsm.peer.ipv4MultiProtocolAdvertised {
 		return
 	}
 
@@ -216,7 +217,7 @@ func (s *openSentState) processMultiProtocolCapability(cap packet.MultiProtocolC
 
 func (s *openSentState) processAddPathCapability(addPathCap packet.AddPathCapability) {
 	for _, addPathCapTuple := range addPathCap {
-		if addPathCapTuple.SAFI != packet.SAFIUnicast {
+		if addPathCapTuple.SAFI != util.SAFIUnicast {
 			continue
 		}
 

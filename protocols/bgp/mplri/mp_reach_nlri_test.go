@@ -1,7 +1,9 @@
-package packet
+package mplri
 
 import (
 	"bytes"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
+	"github.com/bio-routing/bio-rd/util"
 	"testing"
 
 	bnet "github.com/bio-routing/bio-rd/net"
@@ -18,8 +20,8 @@ func TestSerializeMultiProtocolReachNLRI(t *testing.T) {
 		{
 			name: "Simple IPv6 prefix",
 			nlri: MultiProtocolReachNLRI{
-				AFI:     AFIIPv6,
-				SAFI:    SAFIUnicast,
+				AFI:     util.AFIIPv6,
+				SAFI:    util.SAFIUnicast,
 				NextHop: bnet.IPv6FromBlocks(0x2001, 0x678, 0x1e0, 0, 0, 0, 0, 0x2).Dedup(),
 				NLRI: &NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv6FromBlocks(0x2600, 0x6, 0xff05, 0, 0, 0, 0, 0), 48).Dedup(),
@@ -36,8 +38,8 @@ func TestSerializeMultiProtocolReachNLRI(t *testing.T) {
 		{
 			name: "IPv6 prefix with ADD-PATH",
 			nlri: MultiProtocolReachNLRI{
-				AFI:     AFIIPv6,
-				SAFI:    SAFIUnicast,
+				AFI:     util.AFIIPv6,
+				SAFI:    util.SAFIUnicast,
 				NextHop: bnet.IPv6FromBlocks(0x2001, 0x678, 0x1e0, 0, 0, 0, 0, 0x2).Dedup(),
 				NLRI: &NLRI{
 					Prefix:         bnet.NewPfx(bnet.IPv6FromBlocks(0x2600, 0x6, 0xff05, 0, 0, 0, 0, 0), 48).Dedup(),
@@ -57,8 +59,8 @@ func TestSerializeMultiProtocolReachNLRI(t *testing.T) {
 		{
 			name: "IPv4 BGP Labeled Unicast",
 			nlri: MultiProtocolReachNLRI{
-				AFI:     AFIIPv4,
-				SAFI:    SAFILabeledUnicast,
+				AFI:     util.AFIIPv4,
+				SAFI:    util.SAFILabeledUnicast,
 				NextHop: bnet.IPv4FromOctets(192, 0, 2, 0).Dedup(),
 				NLRI: &NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv4FromOctets(192, 0, 2, 0), 24).Dedup(),
@@ -83,7 +85,7 @@ func TestSerializeMultiProtocolReachNLRI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
-			test.nlri.serialize(buf, &EncodeOptions{
+			test.nlri.Serialize(buf, &types.EncodeOptions{
 				UseAddPath: test.addPath,
 			})
 			assert.Equal(t, test.expected, buf.Bytes())

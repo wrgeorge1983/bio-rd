@@ -1,9 +1,8 @@
-package packet
+package mplri
 
 import (
 	"bytes"
 	"fmt"
-
 	"github.com/bio-routing/tflow2/convert"
 )
 

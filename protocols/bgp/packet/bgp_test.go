@@ -1,20 +1,33 @@
 package packet
 
 import (
+	"github.com/bio-routing/bio-rd/util"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAFIName(t *testing.T) {
-	afiIPv4 := AFIName(1)
+func TestAFName(t *testing.T) {
+	afiIPv4 := util.AFName(1, 1)
 	assert.Equal(t, "IPv4", afiIPv4)
 
-	afiIPv6 := AFIName(2)
+	afiIPv6 := util.AFName(2, 1)
 	assert.Equal(t, "IPv6", afiIPv6)
 
-	afiUnknown := AFIName(0)
-	assert.Equal(t, "Unknown AFI", afiUnknown)
+	afiUnknown := util.AFName(0, 0)
+	assert.Equal(t, "Unknown AFI/SAFI", afiUnknown)
+
+	afiVPNv4 := util.AFName(1, 128)
+	assert.Equal(t, "VPNv4", afiVPNv4)
+
+	afiVPNv6 := util.AFName(2, 128)
+	assert.Equal(t, "VPNv6", afiVPNv6)
+
+	afiIPv4LU := util.AFName(1, 4)
+	assert.Equal(t, "IPv4LU", afiIPv4LU)
+
+	afiIPv6LU := util.AFName(2, 4)
+	assert.Equal(t, "IPv6LU", afiIPv6LU)
 }
 
 func TestBGPErrorError(t *testing.T) {

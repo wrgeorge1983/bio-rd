@@ -2,10 +2,10 @@ package prom
 
 import (
 	"fmt"
+	"github.com/bio-routing/bio-rd/util"
 
 	"github.com/bio-routing/bio-rd/cmd/ris-mirror/rismirror"
 	"github.com/bio-routing/bio-rd/cmd/ris-mirror/rismirror/metrics"
-	"github.com/bio-routing/bio-rd/protocols/bgp/packet"
 	"github.com/bio-routing/bio-rd/routingtable/vrf"
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -66,22 +66,22 @@ func (c *risCollector) collectForRouter(ch chan<- prometheus.Metric, rtr *metric
 
 func (c *risCollector) collectMergedLocRIBMetrics(ch chan<- prometheus.Metric, rtr *metrics.RISMirrorRouterMetrics, v *metrics.InternalVRFMetrics) {
 	ch <- prometheus.MustNewConstMetric(mergedLocalRIBRouteCount, prometheus.GaugeValue, float64(v.MergedLocRIBMetricsIPv4Unicast.UniqueRouteCount),
-		getMergedLocRIBMetricsLabels(rtr, v, packet.AFIIPv4)...)
+		getMergedLocRIBMetricsLabels(rtr, v, util.AFIIPv4)...)
 
 	ch <- prometheus.MustNewConstMetric(mergedLocalRIBRouteCount, prometheus.GaugeValue, float64(v.MergedLocRIBMetricsIPv6Unicast.UniqueRouteCount),
-		getMergedLocRIBMetricsLabels(rtr, v, packet.AFIIPv6)...)
+		getMergedLocRIBMetricsLabels(rtr, v, util.AFIIPv6)...)
 
 	ch <- prometheus.MustNewConstMetric(mergedLocalRIBSingleSourceRouteCount, prometheus.GaugeValue, float64(v.MergedLocRIBMetricsIPv4Unicast.RoutesWithSingleSourceCount),
-		getMergedLocRIBMetricsLabels(rtr, v, packet.AFIIPv4)...)
+		getMergedLocRIBMetricsLabels(rtr, v, util.AFIIPv4)...)
 
 	ch <- prometheus.MustNewConstMetric(mergedLocalRIBSingleSourceRouteCount, prometheus.GaugeValue, float64(v.MergedLocRIBMetricsIPv6Unicast.RoutesWithSingleSourceCount),
-		getMergedLocRIBMetricsLabels(rtr, v, packet.AFIIPv6)...)
+		getMergedLocRIBMetricsLabels(rtr, v, util.AFIIPv6)...)
 }
 
 func getMergedLocRIBMetricsLabels(rtr *metrics.RISMirrorRouterMetrics, v *metrics.InternalVRFMetrics, afi uint8) []string {
 	ret := []string{rtr.SysName, rtr.Address.String(), vrf.RouteDistinguisherHumanReadable(v.RD), fmt.Sprintf("%d", afi)}
 
-	if afi == packet.AFIIPv4 {
+	if afi == util.AFIIPv4 {
 		return append(ret, v.MergedLocRIBMetricsIPv4Unicast.RIBName)
 	}
 

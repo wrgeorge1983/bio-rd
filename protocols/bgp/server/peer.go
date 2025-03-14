@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/bio-routing/bio-rd/util"
 	"sync"
 	"time"
 
@@ -198,14 +199,14 @@ type peerAddressFamily struct {
 }
 
 func (p *peer) addressFamily(afi uint16, safi uint8) *peerAddressFamily {
-	if safi != packet.SAFIUnicast {
+	if safi != util.SAFIUnicast {
 		return nil
 	}
 
 	switch afi {
-	case packet.AFIIPv4:
+	case util.AFIIPv4:
 		return p.ipv4
-	case packet.AFIIPv6:
+	case util.AFIIPv6:
 		return p.ipv6
 	default:
 		return nil
@@ -315,7 +316,7 @@ func newPeer(c PeerConfig, server *bgpServer) (*peer, error) {
 	caps = append(caps, asn4Capability(c))
 
 	if c.IPv4 != nil && c.AdvertiseIPv4MultiProtocol {
-		caps = append(caps, multiProtocolCapability(packet.AFIIPv4))
+		caps = append(caps, multiProtocolCapability(util.AFIIPv4))
 		p.ipv4MultiProtocolAdvertised = true
 	}
 
@@ -327,7 +328,7 @@ func newPeer(c PeerConfig, server *bgpServer) (*peer, error) {
 			addPathReceive:    c.IPv6.AddPathRecv,
 			addPathSend:       c.IPv6.AddPathSend,
 		}
-		caps = append(caps, multiProtocolCapability(packet.AFIIPv6))
+		caps = append(caps, multiProtocolCapability(util.AFIIPv6))
 
 		if p.ipv6.rib == nil {
 			return nil, fmt.Errorf("no RIB for IPv6 unicast configured")
@@ -365,7 +366,7 @@ func multiProtocolCapability(afi uint16) packet.Capability {
 		Code: packet.MultiProtocolCapabilityCode,
 		Value: packet.MultiProtocolCapability{
 			AFI:  afi,
-			SAFI: packet.SAFIUnicast,
+			SAFI: util.SAFIUnicast,
 		},
 	}
 }
@@ -373,12 +374,12 @@ func multiProtocolCapability(afi uint16) packet.Capability {
 func addPathCapabilities(c PeerConfig) []packet.Capability {
 	caps := make([]packet.Capability, 0)
 
-	enabled, cap := addPathCapabilityForFamily(c.IPv4, packet.AFIIPv4, packet.SAFIUnicast)
+	enabled, cap := addPathCapabilityForFamily(c.IPv4, util.AFIIPv4, util.SAFIUnicast)
 	if enabled {
 		caps = append(caps, cap)
 	}
 
-	enabled, cap = addPathCapabilityForFamily(c.IPv6, packet.AFIIPv6, packet.SAFIUnicast)
+	enabled, cap = addPathCapabilityForFamily(c.IPv6, util.AFIIPv6, util.SAFIUnicast)
 	if enabled {
 		caps = append(caps, cap)
 	}

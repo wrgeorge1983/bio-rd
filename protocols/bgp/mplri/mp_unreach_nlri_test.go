@@ -1,7 +1,9 @@
-package packet
+package mplri
 
 import (
 	"bytes"
+	"github.com/bio-routing/bio-rd/protocols/bgp/types"
+	"github.com/bio-routing/bio-rd/util"
 	"testing"
 
 	bnet "github.com/bio-routing/bio-rd/net"
@@ -18,8 +20,8 @@ func TestSerializeMultiProtocolUnreachNLRI(t *testing.T) {
 		{
 			name: "Simple IPv6 prefix",
 			nlri: MultiProtocolUnreachNLRI{
-				AFI:  AFIIPv6,
-				SAFI: SAFIUnicast,
+				AFI:  util.AFIIPv6,
+				SAFI: util.SAFIUnicast,
 				NLRI: &NLRI{
 					Prefix: bnet.NewPfx(bnet.IPv6FromBlocks(0x2620, 0x110, 0x9000, 0, 0, 0, 0, 0), 44).Dedup(),
 				},
@@ -33,8 +35,8 @@ func TestSerializeMultiProtocolUnreachNLRI(t *testing.T) {
 		{
 			name: "IPv6 prefix with ADD-PATH",
 			nlri: MultiProtocolUnreachNLRI{
-				AFI:  AFIIPv6,
-				SAFI: SAFIUnicast,
+				AFI:  util.AFIIPv6,
+				SAFI: util.SAFIUnicast,
 				NLRI: &NLRI{
 					PathIdentifier: 100,
 					Prefix:         bnet.NewPfx(bnet.IPv6FromBlocks(0x2620, 0x110, 0x9000, 0, 0, 0, 0, 0), 44).Dedup(),
@@ -53,7 +55,7 @@ func TestSerializeMultiProtocolUnreachNLRI(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			buf := &bytes.Buffer{}
-			test.nlri.serialize(buf, &EncodeOptions{
+			test.nlri.Serialize(buf, &types.EncodeOptions{
 				UseAddPath: test.addPath,
 			})
 			assert.Equal(t, test.expected, buf.Bytes())

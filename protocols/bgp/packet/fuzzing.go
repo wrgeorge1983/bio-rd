@@ -5,6 +5,7 @@ package packet
 
 import (
 	"bytes"
+	"github.com/bio-routing/bio-rd/util"
 )
 
 const (
@@ -30,11 +31,11 @@ func Fuzz(data []byte) int {
 	return KEEP
 }
 
-func getAllDecodingOptions() []DecodeOptions {
+func getAllDecodingOptions() []util.DecodeOptions {
 	parameters := []bool{true, false}
-	var ret []DecodeOptions
+	var ret []util.DecodeOptions
 	for _, octet := range parameters {
-		ret = append(ret, DecodeOptions{
+		ret = append(ret, util.DecodeOptions{
 			Use32BitASN: octet,
 		})
 	}
