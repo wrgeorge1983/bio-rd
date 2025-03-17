@@ -136,7 +136,15 @@ func IPv4FromBytes(b []byte) IP {
 
 // IPFromBytes returns an IP address for a byte slice
 func IPFromBytes(b []byte) (IP, error) {
-	ip4 := net.IP(b).To4()
+
+	// IPv4 with an RD in front as in MPLS VPNs.   Here we're assuming that the RD is 0 as seen in nexthops
+	var ip4 net.IP
+	if len(b) == 12 {
+		ip4 = net.IP(b[8:12]).To4()
+	} else if len(b) == 4 {
+		ip4 = net.IP(b).To4()
+	}
+
 	if ip4 != nil {
 		return IPv4FromOctets(ip4[0], ip4[1], ip4[2], ip4[3]), nil
 	}
@@ -153,7 +161,7 @@ func IPFromBytes(b []byte) (IP, error) {
 			uint16(b[14])<<8+uint16(b[15])), nil
 	}
 
-	return IP{}, fmt.Errorf("byte slice has an invalid length. Expected either 4 (IPv4) or 16 (IPv6) bytes but got: %d", len(b))
+	return IP{}, fmt.Errorf("byte slice has an invalid length. Expected either 4 (IPv4), 12 (IPv4 with RD), or 16 (IPv6) bytes but got: %d", len(b))
 }
 
 // IPFromString returns an IP address for a given string
