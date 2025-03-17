@@ -409,6 +409,8 @@ func (r *Router) processPeerUpNotification(msg *bmppkt.PeerUpNotification) error
 			localASN:        uint32(sentOpen.ASN),
 			ipv4:            &peerAddressFamily{},
 			ipv6:            &peerAddressFamily{},
+			vpnv4:           &peerAddressFamily{},
+			vpnv6:           &peerAddressFamily{},
 			vrf:             r.vrfRegistry.CreateVRFIfNotExists(vrf.RouteDistinguisherHumanReadable(msg.PerPeerHeader.PeerDistinguisher), msg.PerPeerHeader.PeerDistinguisher),
 			adjRIBInFactory: r.adjRIBInFactory,
 		},
@@ -420,6 +422,16 @@ func (r *Router) processPeerUpNotification(msg *bmppkt.PeerUpNotification) error
 
 	fsm.peer.configureBySentOpen(sentOpen)
 
+	ribvpnv4, found := fsm.peer.vrf.RIBByName("inet.3")
+	if !found {
+		return fmt.Errorf("unable to get vpnv4 RIB")
+	}
+	fsm.vpnv4Unicast = newFSMAddressFamily(util.AFIIPv4, util.SAFIMPLSVPN, &peerAddressFamily{
+		rib:               ribvpnv4,
+		importFilterChain: filter.NewAcceptAllFilterChain(),
+	}, fsm)
+	fsm.vpnv4Unicast.bmpInit()
+
 	rib4, found := fsm.peer.vrf.RIBByName("inet.0")
 	if !found {
 		return fmt.Errorf("unable to get inet RIB")
@@ -430,11 +442,20 @@ func (r *Router) processPeerUpNotification(msg *bmppkt.PeerUpNotification) error
 	}, fsm)
 	fsm.ipv4Unicast.bmpInit()
 
+	ribvpnv6, found := fsm.peer.vrf.RIBByName("inet6.3")
+	if !found {
+		return fmt.Errorf("unable to get vpnv6 RIB")
+	}
+	fsm.vpnv6Unicast = newFSMAddressFamily(util.AFIIPv6, util.SAFIMPLSVPN, &peerAddressFamily{
+		rib:               ribvpnv6,
+		importFilterChain: filter.NewAcceptAllFilterChain(),
+	}, fsm)
+	fsm.vpnv6Unicast.bmpInit()
+
 	rib6, found := fsm.peer.vrf.RIBByName("inet6.0")
 	if !found {
 		return fmt.Errorf("unable to get inet6 RIB")
 	}
-
 	fsm.ipv6Unicast = newFSMAddressFamily(util.AFIIPv6, util.SAFIUnicast, &peerAddressFamily{
 		rib:               rib6,
 		importFilterChain: filter.NewAcceptAllFilterChain(),

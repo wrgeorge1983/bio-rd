@@ -44,9 +44,11 @@ type peer struct {
 	peerRoleAdvByPeer           bool
 	peerRoleRemote              uint8
 
-	vrf  *vrf.VRF
-	ipv4 *peerAddressFamily
-	ipv6 *peerAddressFamily
+	vrf   *vrf.VRF
+	ipv4  *peerAddressFamily
+	ipv6  *peerAddressFamily
+	vpnv4 *peerAddressFamily
+	vpnv6 *peerAddressFamily
 
 	adjRIBInFactory adjRIBInFactoryI
 }

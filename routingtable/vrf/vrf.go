@@ -13,9 +13,10 @@ import (
 const DefaultVRFName = "main"
 
 const (
-	afiIPv4     = 1
-	afiIPv6     = 2
-	safiUnicast = 1
+	afiIPv4            = 1
+	afiIPv6            = 2
+	safiUnicast        = 1
+	safiMPLSUnicastVPN = 128
 )
 
 type addressFamily struct {
@@ -39,6 +40,8 @@ func New(name string, rd uint64) (*VRF, error) {
 	v := NewUntrackedVRF(name, rd)
 	v.CreateIPv4UnicastLocRIB("inet.0")
 	v.CreateIPv6UnicastLocRIB("inet6.0")
+	v.CreateVPNv4UnicastLocRIB("inet.3")
+	v.CreateVPNv6UnicastLocRIB("inet6.3")
 
 	err := globalRegistry.registerVRF(v)
 	if err != nil {
@@ -86,6 +89,16 @@ func (v *VRF) CreateIPv6UnicastLocRIB(name string) (*locRIB.LocRIB, error) {
 	return v.createLocRIB(name, addressFamily{afi: afiIPv6, safi: safiUnicast})
 }
 
+// CreateVPNv4UnicastLocRIB creates a LocRIB for the VPNv4 unicast address family
+func (v *VRF) CreateVPNv4UnicastLocRIB(name string) (*locRIB.LocRIB, error) {
+	return v.createLocRIB(name, addressFamily{afi: afiIPv4, safi: safiMPLSUnicastVPN})
+}
+
+// CreateVPNv6UnicastLocRIB creates a LocRIB for the VPNv6 unicast address family
+func (v *VRF) CreateVPNv6UnicastLocRIB(name string) (*locRIB.LocRIB, error) {
+	return v.createLocRIB(name, addressFamily{afi: afiIPv6, safi: safiMPLSUnicastVPN})
+}
+
 // IPv4UnicastRIB returns the local RIB for the IPv4 unicast address family
 func (v *VRF) IPv4UnicastRIB() *locRIB.LocRIB {
 	return v.ribForAddressFamily(addressFamily{afi: afiIPv4, safi: safiUnicast})
@@ -94,6 +107,16 @@ func (v *VRF) IPv4UnicastRIB() *locRIB.LocRIB {
 // IPv6UnicastRIB returns the local RIB for the IPv6 unicast address family
 func (v *VRF) IPv6UnicastRIB() *locRIB.LocRIB {
 	return v.ribForAddressFamily(addressFamily{afi: afiIPv6, safi: safiUnicast})
+}
+
+// VPNv4UnicastRIB returns the local RIB for the VPNv4 unicast address family
+func (v *VRF) VPNv4UnicastRIB() *locRIB.LocRIB {
+	return v.ribForAddressFamily(addressFamily{afi: afiIPv4, safi: safiMPLSUnicastVPN})
+}
+
+// VPNv6UnicastRIB returns the local RIB for the VPNv6 unicast address family
+func (v *VRF) VPNv6UnicastRIB() *locRIB.LocRIB {
+	return v.ribForAddressFamily(addressFamily{afi: afiIPv6, safi: safiMPLSUnicastVPN})
 }
 
 // Name is the name of the VRF

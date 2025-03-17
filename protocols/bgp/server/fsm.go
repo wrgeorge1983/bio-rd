@@ -74,6 +74,8 @@ type FSM struct {
 	ribsInitialized bool
 	ipv4Unicast     *fsmAddressFamily
 	ipv6Unicast     *fsmAddressFamily
+	vpnv4Unicast    *fsmAddressFamily
+	vpnv6Unicast    *fsmAddressFamily
 
 	supports4OctetASN bool
 
@@ -126,6 +128,14 @@ func newFSM(peer *peer) *FSM {
 		f.ipv6Unicast = newFSMAddressFamily(util.AFIIPv6, util.SAFIUnicast, peer.ipv6, f)
 	}
 
+	if peer.vpnv4 != nil {
+		f.vpnv4Unicast = newFSMAddressFamily(util.AFIIPv4, util.SAFIMPLSVPN, peer.vpnv4, f)
+	}
+
+	if peer.vpnv6 != nil {
+		f.vpnv6Unicast = newFSMAddressFamily(util.AFIIPv6, util.SAFIMPLSVPN, peer.vpnv6, f)
+	}
+
 	return f
 }
 
@@ -154,18 +164,28 @@ func (fsm *FSM) updateLastUpdateOrKeepalive() {
 }
 
 func (fsm *FSM) addressFamily(afi uint16, safi uint8) *fsmAddressFamily {
-	if safi != util.SAFIUnicast {
-		return nil
+
+	if safi == util.SAFIMPLSVPN {
+		switch afi {
+		case util.AFIIPv4:
+			return fsm.vpnv4Unicast
+		case util.AFIIPv6:
+			return fsm.vpnv6Unicast
+		}
 	}
 
-	switch afi {
-	case util.AFIIPv4:
-		return fsm.ipv4Unicast
-	case util.AFIIPv6:
-		return fsm.ipv6Unicast
-	default:
-		return nil
+	if safi != util.SAFIUnicast {
+		switch afi {
+		case util.AFIIPv4:
+			return fsm.ipv4Unicast
+		case util.AFIIPv6:
+			return fsm.ipv6Unicast
+		default:
+			return nil
+		}
 	}
+
+	return nil
 }
 
 func (fsm *FSM) start() {
