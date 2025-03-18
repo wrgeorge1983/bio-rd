@@ -106,6 +106,30 @@ func TestDecodeNLRI(t *testing.T) {
 		expected *NLRI
 	}{
 		{
+			name: "VPNv4 NLRI",
+			safi: SAFIVPNUnicast,
+			input: []byte{
+				105,              // prefix (17) + label (24) + RD (64) length
+				0x49, 0x33, 0x01, // MPLS label
+				0, 0,             // RD type 0
+				0, 100,           // Admin field
+				0, 0, 0, 200,     // Assigned number
+				100, 200, 128,    // 100.200.128.0/17
+			},
+			wantFail: false,
+			expected: &NLRI{
+				LabelStack: []LabelStackEntry{
+					0x00493301,
+				},
+				RouteDistinguisher: &RouteDistinguisher{
+					Type:           0,
+					Administrator:  []byte{0, 100},
+					AssignedNumber: []byte{0, 0, 0, 200},
+				},
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(100, 200, 128, 0), 17).Dedup(),
+			},
+		},
+		{
 			name: "LU NLRI #1",
 			safi: SAFILabeledUnicast,
 			input: []byte{
@@ -370,6 +394,27 @@ func TestNLRISerialize(t *testing.T) {
 			},
 			safi:     SAFILabeledUnicast,
 			expected: []byte{17 + 24 + 24, 0x49, 0x33, 0x00, 0x49, 0x33, 0x11, 100, 200, 128},
+		},
+		{
+			name: "VPNv4 with RD and label",
+			nlri: &NLRI{
+				Prefix: bnet.NewPfx(bnet.IPv4FromOctets(100, 200, 128, 0), 17).Dedup(),
+				RouteDistinguisher: &RouteDistinguisher{
+					Type:          RouteDistinguisherTypeAdministratorSubfield2Octet,
+					Administrator: []byte{0, 100},
+					AssignedNumber: []byte{0, 0, 0, 200},
+				},
+				LabelStack: []LabelStackEntry{
+					NewLabelStackEntry(299824),
+				},
+			},
+			safi:     SAFIVPNUnicast,
+			expected: []byte{
+				17 + 24 + 64,   // prefix len + label bits + RD bits
+				0x49, 0x33, 0x01, // label
+				0, 0, 0, 100, 0, 0, 0, 200, // RD
+				100, 200, 128, // prefix
+			},
 		},
 	}
 
