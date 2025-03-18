@@ -416,6 +416,27 @@ func TestNLRISerialize(t *testing.T) {
 				100, 200, 128, // prefix
 			},
 		},
+		{
+			name: "VPNv6 with RD and label",
+			nlri: &NLRI{
+				Prefix: bnet.NewPfx(bnet.IPv6FromBlocks(0x2001, 0x0db8, 0, 0, 0, 0, 0, 0), 48).Dedup(),
+				RouteDistinguisher: &RouteDistinguisher{
+					Type:          RouteDistinguisherTypeAdministratorSubfield4Octet,
+					Administrator: []byte{0, 0, 0, 100},
+					AssignedNumber: []byte{0, 200},
+				},
+				LabelStack: []LabelStackEntry{
+					NewLabelStackEntry(299824),
+				},
+			},
+			safi:     SAFIVPNUnicast,
+			expected: []byte{
+				48 + 24 + 64,   // prefix len + label bits + RD bits
+				0x49, 0x33, 0x01, // label
+				0, 1, 0, 0, 0, 100, 0, 200, // RD
+				0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, // 2001:db8::/48 prefix
+			},
+		},
 	}
 
 	for _, test := range tests {
